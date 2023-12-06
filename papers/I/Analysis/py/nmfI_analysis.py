@@ -8,22 +8,23 @@ import numpy as np
 from oceancolor.iop import cross
 
 
-from ihop.utils import nmf as nmf_utils
-from ihop.iops import nmf as iop_nmf
+#from ihop.utils import nmf as nmf_utils
+from cnmf.oceanography import iops
+from cnmf import nmf_imaging
 
 from IPython import embed
 
 def loisel23_components(iop:str, N_NMF:int=10):
 
-    path = os.path.join(resources.files('ihop'), 
-                    'data', 'NMF')
+    path = os.path.join(resources.files('cnmf'), 
+                    'data', 'L23')
     outroot = os.path.join(path, f'L23_NMF_{iop}_{N_NMF}')
 
     # Load
-    spec_nw, mask, err, wave, Rs = iop_nmf.prep_loisel23(iop)
+    spec_nw, mask, err, wave, Rs = iops.prep_loisel23(iop)
 
     # Do it
-    comps = nmf_utils.NMFcomponents(
+    comps = nmf_imaging.NMFcomponents(
         ref=spec_nw, mask=mask, ref_err=err, n_components=N_NMF,
         path_save=outroot, oneByOne=True)
 
