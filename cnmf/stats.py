@@ -1,59 +1,64 @@
 """ This module contains functions for statistical analysis of NMF results """
 
-def single_exp_var(nmf_fit:str, N_NMF:int, iop:str,
-                   col_wise=False):
-    data = load_nmf(nmf_fit, N_NMF=N_NMF, iop=iop)
-    
-    # transpose data matrix if it is col_wise.
-    if col_wise:
-        data = np.transpose(data)
+import os
+from importlib import resources
 
-    # Calculate covariance matrix
-    cov_data = np.cov(data)
+import numpy as np
+import pandas
+from matplotlib import pyplot as plt
+from importlib import resources
 
-    # Eigen decomposition 
-    values, vectors = np.linalg.eig(cov_data)
+from oceancolor.iop import cross
 
-    # Get explained variances
-    explained_variances = values / np.sum(values)
-    return explained_variances
 
-def exp_var():
+def evar_nmf(v_target:np.array, w:np.array, h:np.array):
+    v_est = np.dot(w, h)
+    rss = np.sum(np.square(v_est - v_target))
+    evar = 1 - rss / np.sum(np.square(v_est))
+    return (rss, evar)
 
-    print("Explained Variance Computation Starts.")
+def evar_computation(nmf_fit:str, N_NMF:int=None, iop:str='a'):
+    d_npz = load_nmf(nmf_fit, N_NMF, iop)
+    v_target = d_npz['spec']
+    #######################################
+    h = d_npz['M']
+    w = d_npz['coeff']
+    # we think it should be, but given data
+    # requires above code
+    # h = d_npz['coeff']
+    # w = d_npz['M']
+    ######################################
+    rss, evar = evar_nmf(v_target, w, h)
+    return (rss, evar)
 
-    # bb
-    exp_var_list = []
-    index_list = []
+def evar_for_all(save_path, iop:str='a'):
+    print("Computation Starts.")
+    evar_list, index_list = [], []
     for i in range(2, 11):
-        data_path = f"../data/L23_NMF_bb_{i}_coef.npy"
-        exp_var_i = exp_var(data_path)
-        exp_var_list.append(exp_var_i)
-        index_list.append(f"bb_{i}")
+        _, evar_i = evar_computation("L23", i, iop)
+        evar_list.append(evar_i)
+        index_list.append(i)
     result_dict = {
         "index_list": index_list,
-        "exp_var": exp_var_list,
+        "exp_var": evar_list,
     }
-    df_exp_var = pd.DataFrame(result_dict)
+    df_exp_var = pandas.DataFrame(result_dict)
     df_exp_var.set_index("index_list", inplace=True)
-    file_save = "../data/exp_var_coef_L23_NMF_bb.csv"
-    df_exp_var.to_csv(file_save, header=False)
-
-    # a
-    exp_var_list = []
-    index_list = []
-    for i in range(2, 11):
-        data_path = f"../data/L23_NMF_a_{i}_coef.npy"
-        exp_var_i = exp_var(data_path)
-        exp_var_list.append(exp_var_i)
-        index_list.append(f"a_{i}")
-    result_dict = {
-        "index_list": index_list,
-        "exp_var": exp_var_list,
-    }
-    df_exp_var = pd.DataFrame(result_dict)
-    df_exp_var.set_index("index_list", inplace=True)
-    file_save = "../data/exp_var_coef_L23_NMF_a.csv"
-    df_exp_var.to_csv(file_save, header=False)    
+    df_exp_var.to_csv(save_path, header=False)    
     print("Computation Ends Successfully!")
-    
+
+def evar_plot(save_path, iop:str='a'):
+    print("Computation Starts.")
+    evar_list, index_list = [], []
+    for i in range(2, 11):
+        _, evar_i = evar_computation("L23", i, iop)
+        evar_list.append(evar_i)
+        index_list.append(i)
+    plt.figure(figsize=(10, 8))
+    plt.plot(index_list, evar_list, '-o', color='blue')
+    plt.axhline(y = 1.0, color ="red", linestyle ="--") 
+    plt.xlabel("Dim of Feature space", fontsize=15)
+    plt.ylabel("Explained Variance", fontsize=15)
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+    print("Plot Ends Successfully!")
