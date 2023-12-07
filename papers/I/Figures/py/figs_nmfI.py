@@ -21,6 +21,8 @@ from oceancolor.iop import cdom
 from oceancolor.ph import pigments
 
 
+from cnmf import io as cnmf_io
+
 mpl.rcParams['font.family'] = 'stixgeneral'
 
 
@@ -34,13 +36,13 @@ from IPython import embed
 
 
 def fig_nmf_rmse(outfile:str='fig_nmf_rmse.png',
-                 nmf_fit:str='l23'):
+                 nmf_fit:str='L23'):
 
     # RMSE
     rmss = []
     for n in range(1,10):
         # load
-        d = load_nmf(nmf_fit, N_NMF=n+1)
+        d = cnmf_io.load_nmf(nmf_fit, N_NMF=n+1, iop='a')
         N_NMF = d['M'].shape[0]
         recon = np.dot(d['coeff'],
                        d['M'])
