@@ -1,4 +1,6 @@
-""" This module contains functions for statistical analysis of NMF results """
+""" This module contains functions for statistical analysis of NMF results 
+WIP -- ignore this for now
+"""
 
 def single_exp_var(nmf_fit:str, N_NMF:int, iop:str,
                    col_wise=False):

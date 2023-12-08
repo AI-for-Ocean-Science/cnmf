@@ -13,8 +13,12 @@ def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
         iop (str): IOP to use
         min_wv (float, optional): Minimum wavelength for analysis. Defaults to 400..
         sigma (float, optional): Error to use. Defaults to 0.05.
-        X (int, optional): X parameter. Defaults to 4.
-        Y (int, optional): _description_. Defaults to 0.
+        X (int, optional): simulation scenario   
+            X = 1: No inelastic processes included.
+            X = 2: Raman scattering by water molecules included.
+            X = 4: Raman scattering by water molecules and fluorescence of chlorophyll-a included.
+        Y (int, optional):  solar zenith angle used in the simulation, and 
+            represents a value of 00, 30, or 60 degrees.
 
     Returns:
         tuple: 
