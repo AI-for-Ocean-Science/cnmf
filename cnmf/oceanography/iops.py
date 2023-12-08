@@ -9,6 +9,8 @@ from oceancolor.tara import spectra
 from oceancolor.utils import spectra as spec_utils 
 from oceancolor import water
 
+from IPython import embed
+
 def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
                   X:int=4, Y:int=0):
     """ Prep L23 data for NMF analysis
@@ -77,7 +79,7 @@ def tara_matched_to_l23(low_cut:float=400., high_cut:float=705.,
             Defaults to 0.
 
     Returns:
-        tuple: wavelength grid, Tara spectra, L23 spectra
+        tuple: wavelength values, Tara spectra, L23 spectra
     """
 
     # Load up the data
