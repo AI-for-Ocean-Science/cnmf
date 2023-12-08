@@ -1,0 +1,61 @@
+""" Code related to Inherent Optical Properties (IOPs) """
+
+import numpy as np
+
+from oceancolor.hydrolight import loisel23
+from oceancolor.iop import cross
+
+def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
+                  X:int=4, Y:int=0):
+    """ Prep L23 data for NMF analysis
+
+    Args:
+        iop (str): IOP to use
+        min_wv (float, optional): Minimum wavelength for analysis. Defaults to 400..
+        sigma (float, optional): Error to use. Defaults to 0.05.
+        X (int, optional): simulation scenario   
+            X = 1: No inelastic processes included.
+            X = 2: Raman scattering by water molecules included.
+            X = 4: Raman scattering by water molecules and fluorescence of chlorophyll-a included.
+        Y (int, optional):  solar zenith angle used in the simulation, and 
+            represents a value of 00, 30, or 60 degrees.
+
+    Returns:
+        tuple: 
+            - **spec_nw** (*np.ndarray*) -- IOPs
+            - **mask** (*np.ndarray*) -- Mask
+            - **err** (*np.ndarray*) -- Error
+            - **wave** (*np.ndarray*) -- Wavelengths
+            - **Rs** (*np.ndarray*) -- Rrs
+    """
+
+    # Load
+    ds = loisel23.load_ds(X, Y)
+
+    # Unpack and cut
+    spec = ds[iop].data
+    wave = ds.Lambda.data 
+    Rs = ds.Rrs.data
+
+    cut = wave >= min_wv
+    spec = spec[:,cut]
+    wave = wave[cut]
+    Rs = Rs[:,cut]
+
+    # Remove water
+    if iop == 'a':
+        a_w = cross.a_water(wave, data='IOCCG')
+        spec_nw = spec - np.outer(np.ones(3320), a_w)
+    else:
+        spec_nw = spec
+
+    # Reshape
+    spec_nw = np.reshape(spec_nw, (spec_nw.shape[0], 
+                     spec_nw.shape[1], 1))
+
+    # Build mask and error
+    mask = (spec_nw >= 0.).astype(int)
+    err = np.ones_like(mask)*sigma
+
+    # Return
+    return spec_nw, mask, err, wave, Rs
