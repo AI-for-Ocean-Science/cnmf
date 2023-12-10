@@ -1,7 +1,6 @@
 """ Figuers for the NMF paper"""
 
 import os
-import xarray
 from importlib import resources
 
 import numpy as np
@@ -10,8 +9,6 @@ from scipy.interpolate import interp1d
 
 import seaborn as sns
 import pandas
-
-import torch
 
 from matplotlib import pyplot as plt
 import matplotlib as mpl
@@ -22,7 +19,6 @@ import corner
 
 from oceancolor.utils import plotting 
 from oceancolor.iop import cdom
-from oceancolor.ph import pigments
 
 from ihop.iops import pca as ihop_pca
 
@@ -101,6 +97,60 @@ def fig_l23_pca_nmf_var(
     print(f"Saved: {outfile}")
 
 
+def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
+                 nmf_fit:str='L23', Ncomp:int=4,
+                 norm:bool=True):
+
+    fig = plt.figure(figsize=(12,6))
+    gs = gridspec.GridSpec(1,2)
+
+    # a, bb
+    for ss, itype in zip([0,1], ['PCA', 'NMF']):
+
+        # load
+        if ss == 0:
+            ab, Rs, d, d_bb = ihop_pca.load_loisel_2023_pca(N_PCA=Ncomp)
+            wave = d['wavelength']
+        elif ss == 1:
+            d = cnmf_io.load_nmf(nmf_fit, Ncomp, 'a')
+            wave = d['wave']
+        M = d['M']
+        #embed(header='fig_nmf_pca_basis 376')
+
+        ax = plt.subplot(gs[ss])
+
+        # Plot
+        for ii in range(Ncomp):
+            # Normalize
+            if norm:
+                iwv = np.argmin(np.abs(wave-440.))
+                nrm = M[ii][iwv]
+            else:
+                nrm = 1.
+            ax.step(wave, M[ii]/nrm, label=f'{itype}:'+r'  $\xi_'+f'{ii+1}'+'$')
+
+        ax.set_xlabel('Wavelength (nm)')
+
+        lbl = 'PCA' if ss == 0 else 'NMF'
+        ax.set_ylabel(lbl+' Basis Functions')
+
+        ax.legend(fontsize=15)
+
+
+        if ss == 0:
+            xlbl, ha, flbl = 0.95, 'right', '(a)'
+        else:
+            xlbl, ha, flbl = 0.05, 'left', '(b)'
+
+        ax.text(xlbl, 0.05, flbl, color='k',
+            transform=ax.transAxes,
+              fontsize=18, ha=ha)
+
+        plotting.set_fontsize(ax, 18)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
 
 def fig_nmf_rmse(outfile:str='fig_nmf_rmse.png',
                  nmf_fit:str='L23'):
@@ -331,12 +381,16 @@ def main(flg):
     else:
         flg= int(flg)
 
-    # NMF RMSE
+    # PCA vs NMF explained variance on L23
     if flg & (2**0):
         fig_l23_pca_nmf_var()
 
-    # NMF basis
+    # L23: PCA and NMF basis functions
     if flg & (2**1):
+        fig_nmf_pca_basis()
+
+    # NMF basis
+    if flg & (2**11):
         fig_nmf_basis()
         fig_nmf_basis(N_NMF=5)
 
@@ -370,10 +424,11 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         flg = 0
-        #flg += 2 ** 0  # 1 -- RMSE
-        #flg += 2 ** 1  # 2 -- L23: PCA vs NMF Explained variance
+        #flg += 2 ** 0  # 1 -- L23: PCA vs NMF Explained variance
+        #flg += 2 ** 1  # 2 -- L23: PCA and NMF basis
 
-        #flg += 2 ** 1  # 2 -- NMF basis
+        #flg += 2 ** 0  # 1 -- RMSE
+
         #flg += 2 ** 2  # 4 -- Indiv
         #flg += 2 ** 3  # 8 -- Coeff
         #flg += 2 ** 4  # 16 -- Fit CDOM

@@ -54,4 +54,5 @@ if __name__ == '__main__':
     '''
 
     #PCA
-    ihop_pca.generate_l23_pca(clobber=True, Ncomp=20, X=4, Y=0)
+    ihop_pca.generate_l23_pca(clobber=False, Ncomp=20, X=4, Y=0)
+    ihop_pca.generate_l23_pca(clobber=False, Ncomp=4, X=4, Y=0)
