@@ -7,6 +7,7 @@ import numpy as np
 
 from oceancolor.iop import cross
 
+from ihop.iops import pca as ihop_pca
 
 from cnmf.oceanography import iops
 from cnmf import nmf_imaging
@@ -42,8 +43,15 @@ def loisel23_components(iop:str, N_NMF:int=10):
 
     print(f'Wrote: {outfile}')
 
+
 if __name__ == '__main__':
 
+    '''
+    # NMF
     for n in range(1,10):
         loisel23_components('a', N_NMF=n+1)
         loisel23_components('bb', N_NMF=n+1)
+    '''
+
+    #PCA
+    ihop_pca.generate_l23_pca(clobber=True, Ncomp=20, X=4, Y=0)
