@@ -8,11 +8,15 @@ import numpy as np
 from scipy import stats
 from scipy.interpolate import interp1d 
 
+import seaborn as sns
+import pandas
+
 import torch
 
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
+mpl.rcParams['font.family'] = 'stixgeneral'
 
 import corner
 
@@ -20,18 +24,81 @@ from oceancolor.utils import plotting
 from oceancolor.iop import cdom
 from oceancolor.ph import pigments
 
+from ihop.iops import pca as ihop_pca
 
 from cnmf import io as cnmf_io
-
-mpl.rcParams['font.family'] = 'stixgeneral'
-
-
-import seaborn as sns
-
-import pandas
+from cnmf import stats as cnmf_stats
 
 
 from IPython import embed
+
+
+
+# #############################################
+def fig_l23_pca_nmf_var(
+    outfile='fig_l23_pca_nmf_var.png',
+    show_spec:bool=False, show_RMSE:bool=False,
+    nmf_fit:str='L23'):
+
+    # Load up
+    L23_pca_N20 = ihop_pca.load('pca_L23_X4Y0_a_N20.npz')
+    #L23_Tara_pca = ihop_pca.load(f'pca_L23_X4Y0_Tara_a_N{N}.npz')
+    #wave = L23_pca_N20['wavelength']
+
+
+    # Variance in NMF
+    evar_list, index_list = [], []
+    for i in range(2, 11):
+        # Load
+        d = cnmf_io.load_nmf(nmf_fit, i, 'a')
+        # eval
+        evar_i = cnmf_stats.evar_computation(
+            d['spec'], d['coeff'], d['M'])
+        evar_list.append(evar_i)
+        index_list.append(i)
+
+    # Figure
+    clrs = ['b', 'g']
+    figsize=(6,6)
+    fig = plt.figure(figsize=figsize)
+    plt.clf()
+    gs = gridspec.GridSpec(1,1)
+
+    # #####################################################
+    # PCA
+    ax= plt.subplot(gs[0])
+
+    ax.plot(
+        np.arange(L23_pca_N20['explained_variance'].size-1)+2,
+        1-np.cumsum(L23_pca_N20['explained_variance'])[1:], 'o-',
+        color=clrs[0])
+    ax.plot(index_list, 1-np.array(evar_list), 'o-', color=clrs[1])
+
+    ax.set_xlabel('Number of Components') 
+    ax.set_ylabel('Cumulative Unexplained Variance')
+    # Horizontal line at 1
+    ax.axhline(1., color='k', ls=':')
+
+
+
+    plotting.set_fontsize(ax, 17)
+    ax.set_xlim(1., 10)
+    ax.set_ylim(1e-5, 0.01)
+    ax.set_yscale('log')
+    for ss in range(2):
+        lbl = 'PCA' if ss == 0 else 'NMF'
+        ax.text(0.95, 0.90-ss*0.1, lbl, color=clrs[ss],
+        transform=ax.transAxes,
+            fontsize=22, ha='right')
+
+    ax.text(0.05, 0.90, 'Loisel+2023', color='k',
+        transform=ax.transAxes,
+        fontsize=22, ha='left')
+
+    
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
 
 
 
@@ -238,52 +305,6 @@ def fig_fit_cdom(outfile:str='fig_fit_cdom.png',
     print(f"Saved: {outfile}")
 
 
-def fig_nmf_indiv(outfile:str='fig_nmf_indiv.png',
-                 nmf_fit:str='l23', N_NMF:int=4):
-    pass
-    '''
-    #
-        ax.set_xlabel('Wavelength (nm)')
-        ax.set_ylabel('Basis vector')
-        ax.minorticks_on()
-
-        elif (N_NMF==5 and ss == 1) or (N_NMF==4 and ss == 0): # CDOM
-            #embed(header='fig_nmf_indiv 150')
-            # Expoential
-            a_cdom_exp = cdom.a_exp(wave)
-            iwv = np.argmin(np.abs(wave-400.))
-            a_cdom_exp *= M[ss][iwv] / a_cdom_exp[iwv]
-
-            # Power law
-            a_cdom_pow = cdom.a_pow(wave)
-            a_cdom_pow *= M[ss][iwv] / a_cdom_pow[iwv]
-
-            # Power law fit
-            coeff, cov = cdom.fit_pow(wave, M[ss])
-            a_cdom_pow_fit = coeff[0] * cdom.a_pow(wave, S=coeff[1])
-
-            #
-            ax.plot(wave, a_cdom_exp, color='gray', label='CDOM exp', ls='--')
-            ax.plot(wave, a_cdom_pow, color='gray', label='CDOM pow', ls=':')
-            ax.plot(wave, a_cdom_pow_fit, color='gray', 
-                    label=f'CDOM pow: S={coeff[1]:0.2f}', ls='-')
-
-            ax.legend()
-        else:
-            pass
-
-        # Save
-        all_ax.append(ax)
-    
-    # Axes
-    for ax in all_ax:
-        plotting.set_fontsize(ax, 15)
-
-    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
-    plt.savefig(outfile, dpi=300)
-    print(f"Saved: {outfile}")
-    '''
-
 def fig_nmf_coeff(outfile:str='fig_nmf_coeff.png',
                  nmf_fit:str='l23'):
 
@@ -312,7 +333,7 @@ def main(flg):
 
     # NMF RMSE
     if flg & (2**0):
-        fig_nmf_rmse()
+        fig_l23_pca_nmf_var()
 
     # NMF basis
     if flg & (2**1):
@@ -337,6 +358,10 @@ def main(flg):
     if flg & (2**5):
         fig_explain_variance()
 
+    # NMF RMSE
+    if flg & (2**10):
+        fig_nmf_rmse()
+
 
 
 # Command line execution
@@ -346,6 +371,8 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         flg = 0
         #flg += 2 ** 0  # 1 -- RMSE
+        #flg += 2 ** 1  # 2 -- L23: PCA vs NMF Explained variance
+
         #flg += 2 ** 1  # 2 -- NMF basis
         #flg += 2 ** 2  # 4 -- Indiv
         #flg += 2 ** 3  # 8 -- Coeff

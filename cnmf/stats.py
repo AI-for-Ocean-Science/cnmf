@@ -11,25 +11,16 @@ from importlib import resources
 from oceancolor.iop import cross
 
 
-def evar_nmf(v_target:np.array, w:np.array, h:np.array):
-    v_est = np.dot(w, h)
-    rss = np.sum(np.square(v_est - v_target))
-    evar = 1 - rss / np.sum(np.square(v_est))
-    return (rss, evar)
+def evar_computation(X:np.ndarray, W:np.ndarray, H:np.ndarray):
+    # Best estiamte
+    X_est = np.dot(W, H)
 
-def evar_computation(nmf_fit:str, N_NMF:int=None, iop:str='a'):
-    d_npz = load_nmf(nmf_fit, N_NMF, iop)
-    v_target = d_npz['spec']
-    #######################################
-    h = d_npz['M']
-    w = d_npz['coeff']
-    # we think it should be, but given data
-    # requires above code
-    # h = d_npz['coeff']
-    # w = d_npz['M']
-    ######################################
-    rss, evar = evar_nmf(v_target, w, h)
-    return (rss, evar)
+    # Total original variance
+    V_true = np.sum(np.std(X, axis=0)**2)
+    V_est = np.sum(np.std(X-X_est, axis=0)**2)
+
+    evar = 1 - V_est/V_true
+    return evar
 
 def evar_for_all(save_path, iop:str='a'):
     print("Computation Starts.")
