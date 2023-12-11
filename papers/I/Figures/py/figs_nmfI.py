@@ -101,6 +101,11 @@ def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
                  nmf_fit:str='L23', Ncomp:int=4,
                  norm:bool=True):
 
+    # Seaborn
+    sns.set(style="whitegrid")
+    sns.set_palette("pastel")
+    #sns.set_palette("husl")
+
     fig = plt.figure(figsize=(12,6))
     gs = gridspec.GridSpec(1,2)
 
@@ -127,14 +132,19 @@ def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
                 nrm = M[ii][iwv]
             else:
                 nrm = 1.
-            ax.step(wave, M[ii]/nrm, label=f'{itype}:'+r'  $\xi_'+f'{ii+1}'+'$')
+            # Step plot
+            sns.lineplot(x=wave, y=M[ii]/nrm, 
+                         label=f'{itype}:'+r'  $\xi_'+f'{ii+1}'+'$',
+                         ax=ax, lw=2)#, drawstyle='steps-pre')
+            #ax.step(wave, M[ii]/nrm, label=f'{itype}:'+r'  $\xi_'+f'{ii+1}'+'$')
 
         ax.set_xlabel('Wavelength (nm)')
 
         lbl = 'PCA' if ss == 0 else 'NMF'
         ax.set_ylabel(lbl+' Basis Functions')
 
-        ax.legend(fontsize=15)
+        loc = 'upper right' if ss == 1 else 'upper left'
+        ax.legend(fontsize=15, loc=loc)
 
 
         if ss == 0:
@@ -263,38 +273,28 @@ def fig_nmf_basis(outroot:str='fig_nmf_basis',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_fit_cdom(outfile:str='fig_fit_cdom.png',
-                 nmf_fit:str='l23', N_NMF:int=4,
-                 wv_max:float=600.):
+def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
+                 nmf_fit:str='L23', N_NMF:int=4,
+                 icdom:int=1,
+                 cdom_max:float=600.):
 
-    # load
-    d = load_nmf(nmf_fit, N_NMF=N_NMF)
+    # Load
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
     M = d['M']
     wave = d['wave']
+    a_cdom = M[icdom]
 
-
-    # load
-    d = load_nmf(nmf_fit, N_NMF=N_NMF)
-    M = d['M']
-    wave = d['wave']
-
-    if N_NMF==5: 
-        ss = 1
-    elif N_NMF==4: 
-        ss = 0
-    else:
-        raise IOError("Bad N_NMF")
-    a_cdom = M[ss]
-
-    wv_cut = wave < wv_max
+    # #########################################################
+    # CDOM
+    wv_cut = wave < cdom_max
     cut_wv = wave[wv_cut]
 
     # Fit exponentials
-    exp_tot_coeff, cov = cdom.fit_exp_tot(wave[wv_cut], 
-                                            a_cdom[wv_cut])
+    exp_tot_coeff, cov = cdom.fit_exp_tot(
+        wave[wv_cut], a_cdom[wv_cut])
     a_cdom_totexp_fit = exp_tot_coeff[0] * cdom.a_exp(
-        wave[wv_cut], S_CDOM=exp_tot_coeff[1],
-        wave0=exp_tot_coeff[2])
+        wave[wv_cut], S_CDOM=exp_tot_coeff[1])
+        #wave0=exp_tot_coeff[2])
     print(f'Tot exp coeff: {exp_tot_coeff}')
     exp_norm_coeff, cov = cdom.fit_exp_norm(wave[wv_cut], 
                                             a_cdom[wv_cut])
@@ -304,51 +304,56 @@ def fig_fit_cdom(outfile:str='fig_fit_cdom.png',
     pow_coeff, pow_cov = cdom.fit_pow(cut_wv, a_cdom[wv_cut])
     a_cdom_pow_fit = pow_coeff[0] * cdom.a_pow(cut_wv, S=pow_coeff[1])
 
+
     fig = plt.figure(figsize=(11,5))
     gs = gridspec.GridSpec(1,2)
 
     # #########################################################
-    # Fits as normal
-    ax_fits = plt.subplot(gs[0])
+    # CDOM fits
+    ax_cdom = plt.subplot(gs[0])
 
     # NMF
-    ax_fits.step(wave, M[ss], label=r'$\xi_'+f'{ss}'+'$', color='k')
+    ax_cdom.step(wave, M[icdom], 
+                 label=r'$\xi_'+f'{icdom}'+'$', color='k',
+                 lw=2)
 
-    ax_fits.plot(cut_wv, a_cdom_exp_fit, 
-            color='b', label='CDOM exp', ls='-')
-    ax_fits.plot(cut_wv, a_cdom_totexp_fit, 
-            color='b', label='CDOM Tot exp', ls='--')
-    ax_fits.plot(cut_wv, a_cdom_pow_fit, 
-            color='r', label='CDOM pow', ls='-')
+    #ax_cdom.plot(cut_wv, a_cdom_exp_fit, 
+    #        color='b', label='CDOM exp', ls='-')
+    ax_cdom.plot(cut_wv, a_cdom_totexp_fit, 
+            color='cyan', label=f'Exponential (S={exp_tot_coeff[1]:0.3f})', 
+            ls='--', lw=2)
+    ax_cdom.plot(cut_wv, a_cdom_pow_fit, 
+            color='r', label='Power Law '+r'($\alpha='+f'{pow_coeff[1]:0.1f}'+r'$)', 
+            ls=':', lw=2)
 
-    ax_fits.axvline(wv_max, ls='--', color='gray')
+    ax_cdom.axvline(cdom_max, ls='--', color='gray')
 
-    ax_fits.legend()
+    ax_cdom.legend(fontsize=15.)
 
     # #########################################################
     # CDF
-    cdf_NMF = np.cumsum(a_cdom[wv_cut])
-    cdf_NMF /= cdf_NMF[-1]
+    #cdf_NMF = np.cumsum(a_cdom[wv_cut])
+    #cdf_NMF /= cdf_NMF[-1]
     
-    cdf_exp = np.cumsum(a_cdom_exp_fit)
-    cdf_exp /= cdf_exp[-1]
+    #cdf_exp = np.cumsum(a_cdom_exp_fit)
+    #cdf_exp /= cdf_exp[-1]
 
-    cdf_exptot = np.cumsum(a_cdom_totexp_fit)
-    cdf_exptot /= cdf_exptot[-1]
+    #cdf_exptot = np.cumsum(a_cdom_totexp_fit)
+    #cdf_exptot /= cdf_exptot[-1]
 
-    cdf_pow = np.cumsum(a_cdom_pow_fit)
-    cdf_pow /= cdf_pow[-1]
+    #cdf_pow = np.cumsum(a_cdom_pow_fit)
+    #cdf_pow /= cdf_pow[-1]
 
-    ax_cdf = plt.subplot(gs[1])
+    #ax_cdf = plt.subplot(gs[1])
 
     # Plot
-    ax_cdf.step(cut_wv, cdf_NMF, label=r'$\xi_'+f'{ss}'+'$', color='k')
-    ax_cdf.plot(cut_wv, cdf_exp, color='b', label='CDOM exp', ls='-')
-    ax_cdf.plot(cut_wv, cdf_exptot, color='b', label='CDOM exp', ls='--')
-    ax_cdf.plot(cut_wv, cdf_pow, color='r', label='CDOM pow', ls='-')
+    #ax_cdf.step(cut_wv, cdf_NMF, label=r'$\xi_'+f'{ss}'+'$', color='k')
+    #ax_cdf.plot(cut_wv, cdf_exp, color='b', label='CDOM exp', ls='-')
+    #ax_cdf.plot(cut_wv, cdf_exptot, color='b', label='CDOM exp', ls='--')
+    #ax_cdf.plot(cut_wv, cdf_pow, color='r', label='CDOM pow', ls='-')
 
     # Finish
-    for ax in [ax_fits, ax_cdf]:
+    for ax in [ax_cdom]:#, ax_cdf]:
         plotting.set_fontsize(ax, 15)
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -389,13 +394,18 @@ def main(flg):
     if flg & (2**1):
         fig_nmf_pca_basis()
 
+    # L23: Fit NMF 1, 2
+    if flg & (2**2):
+        fig_l23_fit_nmf()
+
+
     # NMF basis
     if flg & (2**11):
         fig_nmf_basis()
         fig_nmf_basis(N_NMF=5)
 
     # Individual
-    if flg & (2**2):
+    if flg & (2**12):
         fig_nmf_indiv()
         fig_nmf_indiv(outfile='fig_nmf_indiv_N5.png',
             N_NMF=5)
@@ -426,6 +436,7 @@ if __name__ == '__main__':
         flg = 0
         #flg += 2 ** 0  # 1 -- L23: PCA vs NMF Explained variance
         #flg += 2 ** 1  # 2 -- L23: PCA and NMF basis
+        #flg += 2 ** 2  # 4 -- L23: Fit NMF 1, 2
 
         #flg += 2 ** 0  # 1 -- RMSE
 
