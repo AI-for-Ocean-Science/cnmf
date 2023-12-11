@@ -320,7 +320,8 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
     #ax_cdom.plot(cut_wv, a_cdom_exp_fit, 
     #        color='b', label='CDOM exp', ls='-')
     ax_cdom.plot(cut_wv, a_cdom_totexp_fit, 
-            color='cyan', label=f'Exponential (S={exp_tot_coeff[1]:0.3f})', 
+            color='cyan', 
+            label=r'Exponential ($S='+f'{exp_tot_coeff[1]:0.3f}'+r'$)', 
             ls='--', lw=2)
     ax_cdom.plot(cut_wv, a_cdom_pow_fit, 
             color='r', label='Power Law '+r'($\alpha='+f'{pow_coeff[1]:0.1f}'+r'$)', 
@@ -330,31 +331,16 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
 
     ax_cdom.legend(fontsize=15.)
 
-    # #########################################################
-    # CDF
-    #cdf_NMF = np.cumsum(a_cdom[wv_cut])
-    #cdf_NMF /= cdf_NMF[-1]
-    
-    #cdf_exp = np.cumsum(a_cdom_exp_fit)
-    #cdf_exp /= cdf_exp[-1]
+    # Label the axes
+    ax_cdom.set_xlabel('Wavelength (nm)')
+    ax_cdom.set_ylabel(r'Absorption Coefficient (m$^{-1}$)')
 
-    #cdf_exptot = np.cumsum(a_cdom_totexp_fit)
-    #cdf_exptot /= cdf_exptot[-1]
-
-    #cdf_pow = np.cumsum(a_cdom_pow_fit)
-    #cdf_pow /= cdf_pow[-1]
-
-    #ax_cdf = plt.subplot(gs[1])
-
-    # Plot
-    #ax_cdf.step(cut_wv, cdf_NMF, label=r'$\xi_'+f'{ss}'+'$', color='k')
-    #ax_cdf.plot(cut_wv, cdf_exp, color='b', label='CDOM exp', ls='-')
-    #ax_cdf.plot(cut_wv, cdf_exptot, color='b', label='CDOM exp', ls='--')
-    #ax_cdf.plot(cut_wv, cdf_pow, color='r', label='CDOM pow', ls='-')
+    # #########################
+    # Fit the chlorophyll
 
     # Finish
     for ax in [ax_cdom]:#, ax_cdf]:
-        plotting.set_fontsize(ax, 15)
+        plotting.set_fontsize(ax, 16)
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
