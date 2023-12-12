@@ -326,6 +326,16 @@ def fig_l23_tara_a_contours(
     d_tara = cnmf_io.load_nmf('Tara_L23', N_NMF, iop)
     tara_coeff = d_tara['coeff']
 
+    # Scale?
+    scale = True
+    if scale:
+        for ss in range(4):
+            med_l23 = np.median(coeff[ss,:])
+            med_tara = np.median(tara_coeff[ss,:])
+            print(f"Scale: {med_l23} {med_tara} {med_l23/med_tara}")
+            #
+            tara_coeff[ss,:] *= med_l23/med_tara
+
 
     # #########################################################
     # Figure
