@@ -25,6 +25,7 @@ from ihop.iops import pca as ihop_pca
 from cnmf import io as cnmf_io
 from cnmf import stats as cnmf_stats
 from cnmf.oceanography import iops
+from cnmf import zhu_nmf as nmf
 
 from IPython import embed
 
@@ -306,21 +307,24 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+# #########################################################
+# #########################################################
 def fig_l23_tara_a_contours(
     outfile:str='fig_l23_tara_a_contours.png',
-    nmf_fit:str='L23'):
+    nmf_fit:str='L23',
+    N_NMF:int=4, iop:str='a'):
 
     sns.set(style="whitegrid")
 
     # Load L23 fit
-    d = cnmf_io.load_nmf(nmf_fit, 4, 'a')
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, iop)
     M = d['M']
     coeff = d['coeff']
     wave = d['wave']
 
-    # Calculate Tara
-    wv_grid, final_tara, l23_a = iops.tara_matched_to_l23(
-        low_cut=410.)
+    # Load Tara
+    d_tara = cnmf_io.load_nmf('Tara_L23', N_NMF, iop)
+    tara_coeff = d_tara['coeff']
 
 
     # #########################################################
@@ -329,21 +333,33 @@ def fig_l23_tara_a_contours(
     fig = plt.figure(figsize=figsize)
     plt.clf()
     gs = gridspec.GridSpec(1,1)
+    ax= plt.subplot(gs[0])
 
     # #########################################################
     # L23 Contours plot
-    ax= plt.subplot(gs[0])
     sns.kdeplot(
         x=coeff[:,0], 
         y=coeff[:,1],
         ax=ax,
-        kind='kde')
+        kind='kde', label='L23')
 
+    # #########################################################
+    # Tara Contours plot
+    sns.kdeplot(
+        x=tara_coeff[:,0], 
+        y=tara_coeff[:,1],
+        color='r',
+        ax=ax,
+        kind='kde', label='Tara', ls=':')
+
+    # Finish
     ax.set_xlabel(r'$a_1$')
     ax.set_ylabel(r'$a_2$')
 
     ax.set_xlim(0., 0.02)
     ax.set_ylim(0., 0.04)
+
+    ax.legend(fontsize=15.)
 
     # Finish
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
