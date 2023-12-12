@@ -101,6 +101,7 @@ def tara_matched_to_l23(low_cut:float=400., high_cut:float=705.,
     tara_wv = np.append(wv_grid, [high_cut+5.]) - 2.5 # Because the rebinning is not interpolation
     rwv_nm, r_ap, r_sig = spectra.rebin_to_grid(
         wv_nm, all_a_p, all_a_p_sig, tara_wv)
+    #embed(header='iops 104')
 
     # Add in water
     if include_water:

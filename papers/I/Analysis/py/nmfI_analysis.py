@@ -12,6 +12,7 @@ from ihop.iops import pca as ihop_pca
 from cnmf.oceanography import iops
 from cnmf import nmf_imaging
 from cnmf import io as cnmf_io
+from cnmf import zhu_nmf as nmf
 
 from IPython import embed
 
@@ -34,25 +35,54 @@ def loisel23_components(iop:str, N_NMF:int=10):
     coeff = np.load(outroot+'_coef.npy').T
 
     # Save
-    np.savez(outfile, M=M, coeff=coeff,
-             spec=spec_nw[...,0],
-             mask=mask[...,0],
-             err=err[...,0],
-             wave=wave,
-             Rs=Rs)
+    cnmf_io.save_nmf(outfile, M, coeff, spec_nw[...,0],
+                     mask[...,0], err[...,0], wave, Rs)
 
     print(f'Wrote: {outfile}')
 
+def l23_nmf_on_tara(sig:float=0.0005):
+
+    # Load L23 fit
+    nmf_fit, N_NMF, iop = 'L23', 4, 'a'
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, iop)
+    M = d['M']
+    coeff = d['coeff']
+    wave = d['wave']
+
+    # Calculate Tara
+    wv_grid, final_tara, l23_a = iops.tara_matched_to_l23(
+        low_cut=410.)
+    i0 = np.argmin(np.abs(wv_grid[0]-wave))
+    assert np.isclose(wv_grid[0], wave[i0])
+    i1 = np.argmin(np.abs(wv_grid[-1]-wave))
+
+    # Cut
+    V = np.ones_like(final_tara) / sig**2
+    M_tara = M[:,i0:i1+1]
+    tara_NMF = nmf.NMF(final_tara.T,
+                       V=V.T, W=M_tara.T,
+                       n_components=4)
+    tara_NMF.SolveNMF(H_only=True, verbose=True)
+
+    # Save
+    outfile = cnmf_io.nmf_filename('Tara_L23', N_NMF=N_NMF, iop=iop)
+    cnmf_io.save_nmf(outfile, M_tara, tara_NMF.H, final_tara,
+                     None, V, wv_grid, None)
 
 if __name__ == '__main__':
+
 
     '''
     # NMF
     for n in range(1,10):
         loisel23_components('a', N_NMF=n+1)
         loisel23_components('bb', N_NMF=n+1)
-    '''
+
 
     #PCA
     ihop_pca.generate_l23_pca(clobber=False, Ncomp=20, X=4, Y=0)
     ihop_pca.generate_l23_pca(clobber=False, Ncomp=4, X=4, Y=0)
+    '''
+
+    # L23 NMF on Tara
+    l23_nmf_on_tara()
