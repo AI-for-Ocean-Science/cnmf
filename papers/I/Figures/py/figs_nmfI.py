@@ -24,7 +24,7 @@ from ihop.iops import pca as ihop_pca
 
 from cnmf import io as cnmf_io
 from cnmf import stats as cnmf_stats
-
+from cnmf.oceanography import iops
 
 from IPython import embed
 
@@ -200,45 +200,6 @@ def fig_nmf_rmse(outfile:str='fig_nmf_rmse.png',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_explained_variance(
-    outfile:str='fig_explained_variance.png',
-                 nmf_fit:str='l23'):
-
-    # RMSE
-    rmss = []
-    for n in range(1,10):
-        # load
-        d = load_nmf(nmf_fit, N_NMF=n+1)
-        N_NMF = d['M'].shape[0]
-        recon = np.dot(d['coeff'],
-                       d['M'])
-        #
-        dev = recon - d['spec']
-        rms = np.std(dev, axis=1)
-        # Average
-        avg_rms = np.mean(rms)
-        rmss.append(avg_rms)
-
-    # Plot
-
-    fig = plt.figure(figsize=(6,6))
-    plt.clf()
-    ax = plt.gca()
-
-    ax.plot(2+np.arange(N_NMF-1), rmss, 'o')
-
-    ax.set_xlabel('Number of Components')
-    ax.set_ylabel(r'Average RMSE (m$^{-1}$)')
-
-    ax.set_yscale('log')
-    
-    # axes
-    plotting.set_fontsize(ax, 15)
-
-    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
-    plt.savefig(outfile, dpi=300)
-    print(f"Saved: {outfile}")
-
 def fig_nmf_basis(outroot:str='fig_nmf_basis',
                  nmf_fit:str='l23', N_NMF:int=4):
 
@@ -345,12 +306,56 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+def fig_l23_tara_a_contours(
+    outfile:str='fig_l23_tara_a_contours.png',
+    nmf_fit:str='L23'):
 
-def fig_nmf_coeff(outfile:str='fig_nmf_coeff.png',
-                 nmf_fit:str='l23'):
+    sns.set(style="whitegrid")
 
-    # load
-    d = load_nmf(nmf_fit)
+    # Load L23 fit
+    d = cnmf_io.load_nmf(nmf_fit, 4, 'a')
+    M = d['M']
+    coeff = d['coeff']
+    wave = d['wave']
+
+    # Calculate Tara
+    wv_grid, final_tara, l23_a = iops.tara_matched_to_l23(
+        low_cut=410.)
+
+
+    # #########################################################
+    # Figure
+    figsize=(6,6)
+    fig = plt.figure(figsize=figsize)
+    plt.clf()
+    gs = gridspec.GridSpec(1,1)
+
+    # #########################################################
+    # L23 Contours plot
+    ax= plt.subplot(gs[0])
+    sns.kdeplot(
+        x=coeff[:,0], 
+        y=coeff[:,1],
+        ax=ax,
+        kind='kde')
+
+    ax.set_xlabel(r'$a_1$')
+    ax.set_ylabel(r'$a_2$')
+
+    ax.set_xlim(0., 0.02)
+    ax.set_ylim(0., 0.04)
+
+    # Finish
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
+def fig_l23_a_corner(
+    outfile:str='fig_l23_a_corner.png',
+    nmf_fit:str='L23'):
+
+    # Load
+    d = cnmf_io.load_nmf(nmf_fit, 4, 'a')
     M = d['M']
     coeff = d['coeff']
     wave = d['wave']
@@ -384,6 +389,10 @@ def main(flg):
     if flg & (2**2):
         fig_l23_fit_nmf()
 
+    # L23: a1, z2 contours
+    if flg & (2**3):
+        fig_l23_tara_a_contours()
+
 
     # NMF basis
     if flg & (2**11):
@@ -397,11 +406,11 @@ def main(flg):
             N_NMF=5)
 
     # Coeff
-    if flg & (2**3):
-        fig_nmf_coeff()
+    if flg & (2**14):
+        fig_l23_a_corner()
 
     # Fit CDOM
-    if flg & (2**4):
+    if flg & (2**15):
         fig_fit_cdom()
 
     # Explained variance
@@ -424,12 +433,16 @@ if __name__ == '__main__':
         #flg += 2 ** 1  # 2 -- L23: PCA and NMF basis
         #flg += 2 ** 2  # 4 -- L23: Fit NMF 1, 2
 
+        #flg += 2 ** 3  # 8 -- L23+Tara; a1, a2 contours
+
         #flg += 2 ** 0  # 1 -- RMSE
 
         #flg += 2 ** 2  # 4 -- Indiv
         #flg += 2 ** 3  # 8 -- Coeff
         #flg += 2 ** 4  # 16 -- Fit CDOM
         #flg += 2 ** 5  # 32 -- Explained variance
+        
+        flg += 2 ** 14  # 32 -- Explained variance
     else:
         flg = sys.argv[1]
 
