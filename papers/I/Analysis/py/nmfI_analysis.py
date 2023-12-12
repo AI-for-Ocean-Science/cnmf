@@ -40,7 +40,8 @@ def loisel23_components(iop:str, N_NMF:int=10):
 
     print(f'Wrote: {outfile}')
 
-def l23_nmf_on_tara(sig:float=0.0005):
+def l23_nmf_on_tara(sig:float=0.0005,
+                    cut:int=None):
 
     # Load L23 fit
     nmf_fit, N_NMF, iop = 'L23', 4, 'a'
@@ -56,7 +57,9 @@ def l23_nmf_on_tara(sig:float=0.0005):
     assert np.isclose(wv_grid[0], wave[i0])
     i1 = np.argmin(np.abs(wv_grid[-1]-wave))
 
-    # Cut
+    # Cut?
+    if cut is not None:
+        final_tara = final_tara[:cut]
     V = np.ones_like(final_tara) / sig**2
     M_tara = M[:,i0:i1+1]
     tara_NMF = nmf.NMF(final_tara.T,
@@ -85,4 +88,4 @@ if __name__ == '__main__':
     '''
 
     # L23 NMF on Tara
-    l23_nmf_on_tara()
+    l23_nmf_on_tara(cut=20000)
