@@ -62,10 +62,26 @@ def l23_nmf_on_tara(sig:float=0.0005,
         final_tara = final_tara[:cut]
     V = np.ones_like(final_tara) / sig**2
     M_tara = M[:,i0:i1+1]
-    tara_NMF = nmf.NMF(final_tara.T,
-                       V=V.T, W=M_tara.T,
-                       n_components=4)
-    tara_NMF.SolveNMF(H_only=True, verbose=True)
+
+    # Build it up one component at a time
+    H_tmp = None
+    for nn in range(M_tara.shape[0]):
+        print("Working on component: ", nn+1)
+        W_ini = M_tara[0:nn+1,:].T
+        H_rand = np.random.rand(1, final_tara.shape[0])
+        if H_tmp is not None:
+            H_ini = np.vstack((H_tmp, H_rand))
+        else:
+            H_ini = H_rand
+    
+        tara_NMF = nmf.NMF(final_tara.T,
+                       V=V.T, W=W_ini, H=H_ini,
+                       n_components=nn+1)
+        # Do it
+        tara_NMF.SolveNMF(H_only=True, verbose=True)
+        # Save H
+        H_tmp = tara_NMF.H.copy()
+        embed(header='iops 84')
 
     # Save
     outfile = cnmf_io.nmf_filename('Tara_L23', N_NMF=N_NMF, iop=iop)
