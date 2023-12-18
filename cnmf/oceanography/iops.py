@@ -12,7 +12,7 @@ from oceancolor import water
 from IPython import embed
 
 def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
-                  X:int=4, Y:int=0):
+                  X:int=4, Y:int=0, remove_water:bool=True):
     """ Prep L23 data for NMF analysis
 
     Args:
@@ -21,6 +21,7 @@ def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
         sigma (float, optional): Error to use. Defaults to 0.05.
         X (int, optional): X parameter. Defaults to 4.
         Y (int, optional): _description_. Defaults to 0.
+        remove_water(bool, optional): Remove water??
 
     Returns:
         tuple: 
@@ -45,7 +46,7 @@ def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
     Rs = Rs[:,cut]
 
     # Remove water
-    if iop == 'a':
+    if iop == 'a' and remove_water:
         a_w = cross.a_water(wave, data='IOCCG')
         spec_nw = spec - np.outer(np.ones(3320), a_w)
     else:
@@ -63,7 +64,7 @@ def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
     return spec_nw, mask, err, wave, Rs
 
 
-def tara_matched_to_l23(low_cut:float=400., high_cut:float=705., 
+def tara_matched_to_l23(low_cut:float=405., high_cut:float=705., 
                         X:int=4, Y:int=0,
                         include_water:bool=False):
     """ Generate Tara spectra matched to L23
@@ -73,6 +74,8 @@ def tara_matched_to_l23(low_cut:float=400., high_cut:float=705.,
 
     Args:
         low_cut (float, optional): low cut wavelength. Defaults to 400..
+            The Microbiome dataset has a lowest wavelength
+            of 408.5nm
         high_cut (float, optional): high cut wavelength. Defaults to 705..
         X (int, optional): simulation scenario. Defaults to 4.
         Y (int, optional): solar zenith angle used in the simulation.

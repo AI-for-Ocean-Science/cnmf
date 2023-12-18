@@ -1,11 +1,7 @@
 """ NMF Analysis """
 
-import os
-from importlib import resources
-
 import numpy as np
 
-from oceancolor.iop import cross
 
 from ihop.iops import pca as ihop_pca
 

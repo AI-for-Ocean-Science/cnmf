@@ -85,6 +85,8 @@ import numpy as np
 from scipy import sparse
 from time import time
 
+from IPython import embed
+
 # Some magic numbes
 _largenumber = 1E100
 _smallnumber = 1E-5
@@ -226,25 +228,27 @@ class NMF:
         chi2 = np.einsum('ij,ij', self.V*diff, diff)/self.V_size
         return chi2
 
-    def SolveNMF(self, W_only=False, H_only=False, sparsemode=False, maxiters=None, tol=None,
-                 verbose:bool=False):
+    def SolveNMF(self, W_only=False, H_only=False, 
+                     sparsemode=False, maxiters=None, tol=None,
+                     nfixed:int=None,
+                     verbose:bool=False):
         """
-        Construct the NMF basis
+        Solve the NMF problem by updating the NMF basis.
 
-        Keywords:
-            -- W_only: Only update W, assuming H is known
-            -- H_only: Only update H, assuming W is known
-               -- Only one of them can be set
+        Args:
+            W_only (bool): Only update W, assuming H is known.
+            H_only (bool): Only update H, assuming W is known.
+                Only one of them can be set.
 
-        Optional Input:
-            -- tol: convergence criterion, default 1E-5
-            -- maxiters: allowed maximum number of iterations, default 1000
+        Optional Args:
+            sparsemode (bool): Use sparse matrix operations if True, default is False.
+            maxiters (int): Maximum number of iterations allowed, default is None.
+            tol (float): Convergence criterion, default is None.
+            nfixed (int): Number of fixed components, default is None.
+            verbose (bool): Print progress information if True, default is False.
 
-        Output: 
-            -- chi2: reduced final cost
-            -- time_used: time used in this run
-
-
+        Returns:
+            tuple: A tuple containing the reduced final cost (chi2) and the time used in this run.
         """
 
         t0 = time()
@@ -278,6 +282,7 @@ class NMF:
 
         niter = 0
 
+        # Update
         while (niter < self.maxiters) and ((oldchi2-chi2)/oldchi2 > self.tol):
 
             # Update H
@@ -292,7 +297,11 @@ class NMF:
                 W_up = dot(XV, self.H.T)
                 WHV = multiply(V, np.dot(self.W, self.H))
                 W_down = dot(WHV, self.H.T)
-                self.W = self.W*W_up/W_down
+                tmp = self.W*W_up/W_down
+                if nfixed is not None:
+                    self.W[...,nfixed:] = tmp[...,nfixed:]
+                else:
+                    self.W = tmp
 
             # chi2
             oldchi2 = chi2
