@@ -71,11 +71,17 @@ def decolumnize(data, mask):
             
         return result
 
-def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiters = 1e3, oneByOne = False, path_save = None):
-    """ref and ref_err should be (n * height * width) where n is the number of references. Mask is the region we are interested in.
-    if mask is a 3D array (binary, 0 and 1), then you can mask out different regions in the ref.
-    if path_save is provided, then the code will star from there.
-    """
+def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiters = 1e3, 
+                  oneByOne = False, path_save = None,
+                  seed:int=None):
+    #"""ref and ref_err should be (n * height * width) where n is the number of references. Mask is the region we are interested in.
+    #if mask is a 3D array (binary, 0 and 1), then you can mask out different regions in the ref.
+    #if path_save is provided, then the code will star from there.
+    #"""
+    # Set a seed for repeatability?
+    if seed is not None:
+        np.random.seed(seed)
+    #
     if ref_err is None:
         ref_err = np.sqrt(ref)
     

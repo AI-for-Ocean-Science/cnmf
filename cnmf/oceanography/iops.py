@@ -65,7 +65,7 @@ def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
 
 
 def tara_matched_to_l23(low_cut:float=405., high_cut:float=705., 
-                        X:int=4, Y:int=0,
+                        X:int=4, Y:int=0, for_nmf_imaging:bool=False,
                         include_water:bool=False):
     """ Generate Tara spectra matched to L23
 
@@ -129,6 +129,21 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
     # Cut down: Aggressive but necessary
     final_tara = final_tara[mask,:]
 
-
     # Return
-    return wv_grid, final_tara, l23_a
+
+    # For NMF imaging?
+    if for_nmf_imaging:
+        # Build mask and error
+        mask = (wv_grid >= 0.).astype(int)
+        mask = np.outer(np.ones(final_tara.shape[0]), mask)
+        mask = np.reshape(mask, (mask.shape[0], 
+                     mask.shape[1], 1))
+        err = np.ones_like(mask)*0.005
+
+        final_tara = np.reshape(final_tara, (final_tara.shape[0], 
+                     final_tara.shape[1], 1))
+
+        return wv_grid, final_tara, mask, err
+
+    else:
+        return wv_grid, final_tara, l23_a
