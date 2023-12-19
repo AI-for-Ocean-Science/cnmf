@@ -30,6 +30,88 @@ from cnmf import zhu_nmf as nmf
 from IPython import embed
 
 
+# #############################################
+def fig_examples(outfile='fig_examples.png',
+    nmf_fit:str='L23', N_NMF:int=4, iop:str='a'):
+
+    # Load
+    d_l23 = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
+    d_tara = cnmf_io.load_nmf('Tara_L23', N_NMF, iop)
+
+    # #########################################################
+    # Figure
+    figsize=(6,6)
+    fig = plt.figure(figsize=figsize)
+    plt.clf()
+    gs = gridspec.GridSpec(2,2)
+
+    # a440 histogram
+    ax_440 = plt.subplot(gs[2])
+
+    i440_l23 = np.argmin(np.abs(d_l23['wave']-440.))
+    a_440_l23 = d_l23['spec'][:,i440_l23]
+
+    i440_tara = np.argmin(np.abs(d_tara['wave']-440.))
+    a_440_tara = d_tara['spec'][:,i440_tara]
+
+    d_440 = pandas.DataFrame()
+    d_440['a440'] = np.concatenate((a_440_l23, a_440_tara))
+    d_440['Sample'] = ['L23']*len(a_440_l23) + ['Tara']*len(a_440_tara)
+
+    sns.histplot(data=d_440, x='a440', hue='Sample', ax=ax_440, stat='density', 
+                 common_norm=False, log_scale=True)#, bins=20)
+    ax_440.set_xlabel(r'$a_{440}$ (m$^{-1}$)')
+
+    # Add a a675 histogram
+    ax_675 = plt.subplot(gs[3])
+
+    i675_l23 = np.argmin(np.abs(d_l23['wave']-675.))
+    a_675_l23 = d_l23['spec'][:,i675_l23]
+
+    i675_tara = np.argmin(np.abs(d_tara['wave']-675.))
+    a_675_tara = d_tara['spec'][:,i675_tara]
+
+    d_675 = pandas.DataFrame()
+    d_675['a675'] = np.concatenate((a_675_l23, a_675_tara))
+    d_675['Sample'] = ['L23']*len(a_675_l23) + ['Tara']*len(a_675_tara)
+
+    sns.histplot(data=d_675, x='a675', hue='Sample', ax=ax_675, stat='density',
+                    common_norm=False, log_scale=True)#, bins=20)
+    ax_675.set_xlabel(r'$a_{675}$ (m$^{-1}$)')
+
+    # Spectra time
+    ax_spec = plt.subplot(gs[0:2])
+
+    # Tara spectra
+    for ss, a440 in enumerate([6e-3, 2e-2]):
+        ls = '-' if ss == 0 else '--'
+        it_0 = np.argmin(np.abs(d_tara['spec'][:,i440_tara] - a440))
+        ax_spec.plot(d_tara['wave'], d_tara['spec'][it_0], 
+                 label=r'Tara: $a_{440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
+                 color='orange', ls=ls)
+    # L23 spectra
+    for ss, a440 in enumerate([2e-2, 2e-1]):
+        ls = '-' if ss == 0 else '--'
+        il_0 = np.argmin(np.abs(d_l23['spec'][:,i440_l23] - a440))
+        ax_spec.plot(d_l23['wave'], d_l23['spec'][il_0], 
+                 label=r'L23: $a_{440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
+                 color='blue', ls=ls)
+    # Label
+    ax_spec.set_xlabel('Wavelength (nm)')
+    ax_spec.set_ylabel(r'Absorption Coefficient (m$^{-1}$)')
+    #ax_spec.set_yscale('log')
+
+    ax_spec.legend(fontsize=10.)
+
+    # Axes
+    for ax in [ax_440, ax_675, ax_spec]:
+        plotting.set_fontsize(ax, 12.)
+
+    # Finish
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
 
 # #############################################
 def fig_l23_pca_nmf_var(
@@ -403,20 +485,24 @@ def main(flg):
     else:
         flg= int(flg)
 
-    # PCA vs NMF explained variance on L23
+    # Example spectra
     if flg & (2**0):
+        fig_examples()
+
+    # PCA vs NMF explained variance on L23
+    if flg & (2**1):
         fig_l23_pca_nmf_var()
 
     # L23: PCA and NMF basis functions
-    if flg & (2**1):
+    if flg & (2**2):
         fig_nmf_pca_basis()
 
     # L23: Fit NMF 1, 2
-    if flg & (2**2):
+    if flg & (2**3):
         fig_l23_fit_nmf()
 
     # L23: a1, z2 contours
-    if flg & (2**3):
+    if flg & (2**4):
         fig_l23_tara_a_contours()
 
 
@@ -455,11 +541,12 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         flg = 0
-        #flg += 2 ** 0  # 1 -- L23: PCA vs NMF Explained variance
-        #flg += 2 ** 1  # 2 -- L23: PCA and NMF basis
-        #flg += 2 ** 2  # 4 -- L23: Fit NMF 1, 2
+        #flg += 2 ** 0  # 1 -- Example spectra
+        #flg += 2 ** 1  # 1 -- L23: PCA vs NMF Explained variance
+        #flg += 2 ** 2  # 2 -- L23: PCA and NMF basis
+        #flg += 2 ** 3  # 4 -- L23: Fit NMF 1, 2
 
-        #flg += 2 ** 3  # 8 -- L23+Tara; a1, a2 contours
+        #flg += 2 ** 4  # 8 -- L23+Tara; a1, a2 contours
 
         #flg += 2 ** 0  # 1 -- RMSE
 
