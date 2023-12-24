@@ -225,7 +225,8 @@ def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
 
         # load
         if ss == 0:
-            ab, Rs, d, d_bb = ihop_pca.load_loisel_2023_pca(N_PCA=Ncomp)
+            ab, Rs, d, d_bb = ihop_pca.load_loisel_2023_pca(N_PCA=Ncomp,
+                                l23_path=pca_path)
             wave = d['wavelength']
         elif ss == 1:
             d = cnmf_io.load_nmf(nmf_fit, Ncomp, 'a')
@@ -254,12 +255,12 @@ def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
         lbl = 'PCA' if ss == 0 else 'NMF'
         ax.set_ylabel(lbl+' Basis Functions')
 
-        loc = 'upper right' if ss == 1 else 'upper left'
+        loc = 'upper right'# if ss == 1 else 'upper left'
         ax.legend(fontsize=15, loc=loc)
 
 
         if ss == 0:
-            xlbl, ha, flbl = 0.95, 'right', '(a)'
+            xlbl, ha, flbl = 0.05, 'left', '(a)'
         else:
             xlbl, ha, flbl = 0.05, 'left', '(b)'
 
