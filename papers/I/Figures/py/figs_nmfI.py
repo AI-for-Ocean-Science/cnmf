@@ -24,19 +24,22 @@ from ihop.iops import pca as ihop_pca
 
 from cnmf import io as cnmf_io
 from cnmf import stats as cnmf_stats
-from cnmf.oceanography import iops
-from cnmf import zhu_nmf as nmf
 
 from IPython import embed
 
+pca_path = os.path.join(resources.files('cnmf'),
+                            'data', 'L23')
 
 # #############################################
 def fig_examples(outfile='fig_examples.png',
-    nmf_fit:str='L23', N_NMF:int=4, iop:str='a'):
+    nmf_fit:str='L23', N_NMF:int=4, iop:str='a',
+    norm:bool=True):
 
     # Load
     d_l23 = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
     d_tara = cnmf_io.load_nmf('Tara_L23', N_NMF, iop)
+
+    #embed(header='fig_examples 42')
 
     # #########################################################
     # Figure
@@ -79,26 +82,50 @@ def fig_examples(outfile='fig_examples.png',
                     common_norm=False, log_scale=True)#, bins=20)
     ax_675.set_xlabel(r'$a_{675}$ (m$^{-1}$)')
 
+    # Tick marks on the top
+    for ax in [ax_440, ax_675]:
+        ax.tick_params(axis='x', which='both', bottom=True, 
+                       top=True, labelbottom=True, 
+                       labeltop=False)
+
+    # #########################################################
     # Spectra time
     ax_spec = plt.subplot(gs[0:2])
+    ax_spec.grid(True)
 
     # Tara spectra
     for ss, a440 in enumerate([6e-3, 2e-2]):
         ls = '-' if ss == 0 else '--'
         it_0 = np.argmin(np.abs(d_tara['spec'][:,i440_tara] - a440))
-        ax_spec.plot(d_tara['wave'], d_tara['spec'][it_0], 
+        # Normalize?
+        if norm:
+            iwv = np.argmin(np.abs(d_tara['wave']-440.))
+            nrm = d_tara['spec'][it_0, iwv]
+        else:
+            nrm = 1.
+        ax_spec.plot(d_tara['wave'], d_tara['spec'][it_0]/nrm, 
                  label=r'Tara: $a_{440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
                  color='orange', ls=ls)
     # L23 spectra
     for ss, a440 in enumerate([2e-2, 2e-1]):
-        ls = '-' if ss == 0 else '--'
+        ls = '-' if ss == 0 else ':'
         il_0 = np.argmin(np.abs(d_l23['spec'][:,i440_l23] - a440))
-        ax_spec.plot(d_l23['wave'], d_l23['spec'][il_0], 
+        # Normalize?
+        if norm:
+            iwv = np.argmin(np.abs(d_l23['wave']-440.))
+            nrm = d_l23['spec'][il_0, iwv]
+        else:
+            nrm = 1.
+        # Plot
+        ax_spec.plot(d_l23['wave'], d_l23['spec'][il_0]/nrm, 
                  label=r'L23: $a_{440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
                  color='blue', ls=ls)
     # Label
     ax_spec.set_xlabel('Wavelength (nm)')
-    ax_spec.set_ylabel(r'Absorption Coefficient (m$^{-1}$)')
+    if norm:
+        ax_spec.set_ylabel(r'$a(\lambda$) Normalized at 440nm')
+    else:
+        ax_spec.set_ylabel(r'Absorption Coefficient (m$^{-1}$)')
     #ax_spec.set_yscale('log')
 
     ax_spec.legend(fontsize=10.)
@@ -120,7 +147,8 @@ def fig_l23_pca_nmf_var(
     nmf_fit:str='L23'):
 
     # Load up
-    L23_pca_N20 = ihop_pca.load('pca_L23_X4Y0_a_N20.npz')
+    L23_pca_N20 = ihop_pca.load('pca_L23_X4Y0_a_N20.npz',
+                                pca_path=pca_path)
     #L23_Tara_pca = ihop_pca.load(f'pca_L23_X4Y0_Tara_a_N{N}.npz')
     #wave = L23_pca_N20['wavelength']
 

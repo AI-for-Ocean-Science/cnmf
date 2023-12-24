@@ -2,6 +2,7 @@
 
 import numpy as np
 import os
+from importlib import resources
 
 from ihop.iops import pca as ihop_pca
 
@@ -12,7 +13,13 @@ from cnmf import zhu_nmf as nmf
 
 from IPython import embed
 
-def loisel23_components(iop:str, N_NMF:int=10, clobber:bool=False):
+# Wavelength range
+min_wv=406. 
+high_cut=704.
+
+def loisel23_components(iop:str, N_NMF:int=10, 
+    min_wv:float=min_wv, high_cut:float=high_cut,
+    clobber:bool=False):
     """
     Perform NMF analysis on Loisel23 data.
 
@@ -31,7 +38,9 @@ def loisel23_components(iop:str, N_NMF:int=10, clobber:bool=False):
     outroot = outfile.replace('.npz','')
 
     # Load
-    spec_nw, mask, err, wave, Rs = iops.prep_loisel23(iop)
+    spec_nw, mask, err, wave, Rs = iops.prep_loisel23(
+        iop, min_wv=min_wv, remove_water=True,
+        high_cut=high_cut)
 
     # Do it
     comps = nmf_imaging.NMFcomponents(
@@ -52,6 +61,12 @@ def loisel23_components(iop:str, N_NMF:int=10, clobber:bool=False):
 
 def l23_nmf_on_tara(sig:float=0.0005,
                     cut:int=None):
+    """ Perform NMF analysis on Tara data, using the L23 fit as a basis.
+
+    Args:
+        sig (float, optional): _description_. Defaults to 0.0005.
+        cut (int, optional): Cut on the number of spectra. Defaults to None.
+    """
 
     # Load L23 fit
     nmf_fit, N_NMF, iop = 'L23', 4, 'a'
@@ -62,10 +77,11 @@ def l23_nmf_on_tara(sig:float=0.0005,
 
     # Calculate Tara
     wv_grid, final_tara, l23_a = iops.tara_matched_to_l23(
-        low_cut=410.)
+        low_cut=min_wv, high_cut=high_cut)
     i0 = np.argmin(np.abs(wv_grid[0]-wave))
     assert np.isclose(wv_grid[0], wave[i0])
     i1 = np.argmin(np.abs(wv_grid[-1]-wave))
+    #embed(header='nmf analysis 82')
 
     # Cut?
     if cut is not None:
@@ -141,23 +157,28 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
 if __name__ == '__main__':
 
 
-
-    '''
     # NMF on L23
     for n in range(1,10):
     #for n in [3]:
-        loisel23_components('a', N_NMF=n+1)
-        loisel23_components('bb', N_NMF=n+1)
+        loisel23_components('a', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
+        loisel23_components('bb', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
 
 
     # PCA on L23
-    ihop_pca.generate_l23_pca(clobber=False, Ncomp=20, X=4, Y=0)
-    ihop_pca.generate_l23_pca(clobber=False, Ncomp=4, X=4, Y=0)
+    pca_path = os.path.join(resources.files('cnmf'),
+                            'data', 'L23')
+    outroot = 'pca_L23'
+    ihop_pca.generate_l23_pca(clobber=True, Ncomp=20, X=4, Y=0,
+                              min_wv=min_wv, high_cut=high_cut,
+                              pca_path=pca_path, outroot=outroot)
+    ihop_pca.generate_l23_pca(clobber=True, Ncomp=4, X=4, Y=0,
+                              min_wv=min_wv, high_cut=high_cut,
+                              pca_path=pca_path, outroot=outroot)
 
 
     # L23 NMF on Tara
-    l23_nmf_on_tara(cut=20000)
-    '''
+    l23_nmf_on_tara(cut=40000)
+
 
     # NMF on Tara alone
-    tara_components('a', N_NMF=4)
+    #tara_components('a', N_NMF=4)

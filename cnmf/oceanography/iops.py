@@ -12,12 +12,14 @@ from oceancolor import water
 from IPython import embed
 
 def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
-                  X:int=4, Y:int=0, remove_water:bool=True):
+                  X:int=4, Y:int=0, remove_water:bool=True,
+                  high_cut:float=900.):
     """ Prep L23 data for NMF analysis
 
     Args:
         iop (str): IOP to use
         min_wv (float, optional): Minimum wavelength for analysis. Defaults to 400..
+        high_cut (float, optional): High cut wavelength. Defaults to 900..
         sigma (float, optional): Error to use. Defaults to 0.05.
         X (int, optional): X parameter. Defaults to 4.
         Y (int, optional): _description_. Defaults to 0.
@@ -40,7 +42,7 @@ def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
     wave = ds.Lambda.data 
     Rs = ds.Rrs.data
 
-    cut = wave >= min_wv
+    cut = (wave >= min_wv) & (wave <= high_cut)
     spec = spec[:,cut]
     wave = wave[cut]
     Rs = Rs[:,cut]
@@ -77,6 +79,8 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
             The Microbiome dataset has a lowest wavelength
             of 408.5nm
         high_cut (float, optional): high cut wavelength. Defaults to 705..
+            The Microbiome dataset has a highest wavelength
+            of 726.3nm
         X (int, optional): simulation scenario. Defaults to 4.
         Y (int, optional): solar zenith angle used in the simulation.
             Defaults to 0.
