@@ -135,7 +135,8 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
 
     # Load
     wv_grid, final_tara, mask, err = iops.tara_matched_to_l23(
-        low_cut=405., for_nmf_imaging=True)
+        low_cut=min_wv, for_nmf_imaging=True,
+        high_cut=high_cut)
 
     # Do it
     comps = nmf_imaging.NMFcomponents(
@@ -157,6 +158,7 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
 if __name__ == '__main__':
 
 
+    '''
     # NMF on L23
     for n in range(1,10):
     #for n in [3]:
@@ -178,7 +180,7 @@ if __name__ == '__main__':
 
     # L23 NMF on Tara
     l23_nmf_on_tara(cut=40000)
-
+    '''
 
     # NMF on Tara alone
-    #tara_components('a', N_NMF=4)
+    tara_components('a', N_NMF=4)

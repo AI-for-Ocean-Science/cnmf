@@ -19,6 +19,7 @@ import corner
 
 from oceancolor.utils import plotting 
 from oceancolor.iop import cdom
+from oceancolor.ph import pigments
 
 from ihop.iops import pca as ihop_pca
 
@@ -348,7 +349,8 @@ def fig_nmf_basis(outroot:str='fig_nmf_basis',
 
 def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
                  nmf_fit:str='L23', N_NMF:int=4,
-                 icdom:int=1,
+                 icdom:int=1, # 0-indexing
+                 ichl:int=0, # 0-indexing
                  cdom_max:float=600.):
 
     # Load
@@ -383,11 +385,11 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
 
     # #########################################################
     # CDOM fits
-    ax_cdom = plt.subplot(gs[0])
+    ax_cdom = plt.subplot(gs[icdom])
 
     # NMF
     ax_cdom.step(wave, M[icdom], 
-                 label=r'$\xi_'+f'{icdom}'+'$', color='k',
+                 label=r'$\xi_'+f'{icdom+1}'+'$', color='k',
                  lw=2)
 
     #ax_cdom.plot(cut_wv, a_cdom_exp_fit, 
@@ -402,21 +404,152 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
 
     ax_cdom.axvline(cdom_max, ls='--', color='gray')
 
-    ax_cdom.legend(fontsize=15.)
 
-    # Label the axes
-    ax_cdom.set_xlabel('Wavelength (nm)')
-    ax_cdom.set_ylabel(r'Absorption Coefficient (m$^{-1}$)')
 
     # #########################
     # Fit the chlorophyll
+    ax_chl = plt.subplot(gs[ichl])
+
+    a_chl = M[ichl]
+    chla = pigments.a_chl(wave, ctype='a')
+    chlb = pigments.a_chl(wave, ctype='b')
+    chlc = pigments.a_chl(wave, ctype='c12')
+    peri = pigments.a_chl(wave, pigment='Peri')
+    beta = pigments.a_chl(wave, pigment='beta-Car')
+
+    gd1 = (wave > 420.) & (wave < 550.)
+    gd2 = (wave > 589.) & (wave < 700.)
+    gd_wave2 = gd1 | gd2
+
+    # Fit
+    ans, cov = pigments.fit_a_chl(
+        wave[gd_wave2], a_chl[gd_wave2], 
+        add_pigments=[peri[gd_wave2], beta[gd_wave2]])
+    new_model = ans[0]*chla + ans[1]*chlb + ans[2]*chlc + ans[3]*peri + ans[4]*beta
+    
+    # Plot
+    ax_chl.plot(wave, a_chl, color='k', label=r'$\xi_'+f'{ichl+1}'+'$')
+    ax_chl.plot(wave[gd_wave2], new_model[gd_wave2], 'ro', label='model')
+    #https://www.allmovie.com/artist/akira-kurosawa-vn6780882/filmography
+
+    # Chl
+    for ss, pig, wv, lbl in zip(range(3), [chla,chlb,chlc], [673.,440.,440.], ['a', 'b', 'c12']):
+        #iwv = np.argmin(np.abs(wave-wv))
+        #nrm = pig[iwv]/M[0,iwv]
+        #print(f'nrm: {1/nrm}')
+        ax_chl.plot(wave, pig*ans[ss], label=f'Chl-{lbl}', ls=':')
+
+
+    # New ones
+    ax_chl.plot(wave, peri*ans[3], color='purple', label='Peri', ls=':')
+    ax_chl.plot(wave, beta*ans[4], color='orange', label=r'$\beta$-Car', ls=':')
 
     # Finish
-    for ax in [ax_cdom]:#, ax_cdf]:
+    for ax in [ax_cdom, ax_chl]:
         plotting.set_fontsize(ax, 16)
+        # Label the axes
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_ylabel('NMF Basis')
+        ax.legend(fontsize=15.)
+
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
+
+# #########################################################
+# #########################################################
+def fig_l23_tara_coeffs(
+    outfile:str='fig_l23_tara_coeffs.png',
+    N_NMF:int=4, iop:str='a'):
+
+    # Load L23 fit
+    d_l23 = cnmf_io.load_nmf('L23', N_NMF, iop)
+    M_l23 = d_l23['M']
+    coeff = d_l23['coeff']
+    wave_l23 = d_l23['wave']
+
+    # Load Tara
+    d_tara = cnmf_io.load_nmf('Tara_L23', N_NMF, iop)
+    M_tara = d_tara['M']
+    tara_coeff = d_tara['coeff']
+
+    df = pandas.DataFrame()
+    df['a1'] = coeff[:,0].tolist() + tara_coeff[0,:].tolist()
+    df['a2'] = coeff[:,1].tolist() + tara_coeff[1,:].tolist()
+    df['a3'] = coeff[:,2].tolist() + tara_coeff[2,:].tolist()
+    df['a4'] = coeff[:,3].tolist() + tara_coeff[3,:].tolist()
+    df['sample'] = ['L23']*len(coeff[:,0]) + ['Tara']*len(tara_coeff[0,:])
+
+    # #########################################################
+    # Figure
+    figsize=(6,6)
+    fig = plt.figure(figsize=figsize)
+    plt.clf()
+    gs = gridspec.GridSpec(2,2)
+
+    for ss in range(4):
+        ax= plt.subplot(gs[ss])
+        xmin = 1e-15 if ss < 3 else 1e-3
+        keep = df[f'a{ss+1}'] > xmin
+        sns.histplot(df[keep], x=f'a{ss+1}',
+                     hue='sample', 
+                     ax=ax, bins=100,
+                common_bins=True, stat='density', common_norm=False,
+                log_scale=True)
+        # Label
+        ax.set_xlabel(r'$a_'+f'{ss+1}'+'$')
+        # Fontsize
+        plotting.set_fontsize(ax, 12)
+        # Range
+        #xmin = max(1e-15, np.min(df[f'a{ss+1}']))
+        #xmax = np.max(df[f'a{ss+1}'])
+        #ax.set_xlim(xmin, xmax)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
+
+
+# #########################################################
+# #########################################################
+def fig_l23_vs_tara_M(
+    outfile:str='fig_l23_vs_tara_M.png',
+    N_NMF:int=4, iop:str='a'):
+
+    # Load L23 fit
+    d_l23 = cnmf_io.load_nmf('L23', N_NMF, iop)
+    M_l23 = d_l23['M']
+    coeff_l23 = d_l23['coeff']
+    wave_l23 = d_l23['wave']
+
+    # Load Tara
+    d_tara = cnmf_io.load_nmf('Tara', N_NMF, iop)
+    M_tara = d_tara['M']
+    wave_tara = d_tara['wave']
+
+    # #########################################################
+    # Figure
+    figsize=(6,6)
+    fig = plt.figure(figsize=figsize)
+    plt.clf()
+    gs = gridspec.GridSpec(1,1)
+    ax = plt.subplot(gs[0])
+
+    # Plot the Ms
+    for ss in range(N_NMF):
+        ax.plot(wave_l23, M_l23[ss], label=r'L23: $\xi_'+f'{ss+1}'+'$', ls=':')
+        ax.plot(wave_tara, M_tara[ss], label=r'Tara: $\xi_'+f'{ss+1}'+'$')
+
+    # Axes
+    ax.set_xlabel('Wavelength (nm)')
+    ax.set_ylabel('Basis vector')
+    ax.legend(fontsize=15.)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
 
 # #########################################################
 # #########################################################
@@ -530,9 +663,9 @@ def main(flg):
     if flg & (2**3):
         fig_l23_fit_nmf()
 
-    # L23: a1, z2 contours
+    # Coefficient distributions for L23 NMF
     if flg & (2**4):
-        fig_l23_tara_a_contours()
+        fig_l23_tara_coeffs()
 
 
     # NMF basis
@@ -562,6 +695,10 @@ def main(flg):
     if flg & (2**10):
         fig_nmf_rmse()
 
+    # L23: a1, z2 contours
+    if flg & (2**27):
+        fig_l23_tara_a_contours()
+
 
 
 # Command line execution
@@ -571,11 +708,10 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         flg = 0
         #flg += 2 ** 0  # 1 -- Example spectra
-        #flg += 2 ** 1  # 1 -- L23: PCA vs NMF Explained variance
-        #flg += 2 ** 2  # 2 -- L23: PCA and NMF basis
-        #flg += 2 ** 3  # 4 -- L23: Fit NMF 1, 2
-
-        #flg += 2 ** 4  # 8 -- L23+Tara; a1, a2 contours
+        #flg += 2 ** 1  # 2 -- L23: PCA vs NMF Explained variance
+        #flg += 2 ** 2  # 4 -- L23: PCA and NMF basis
+        #flg += 2 ** 3  # 8 -- L23: Fit NMF basis functions with CDOM, Chl
+        #flg += 2 ** 4  # 16 -- L23+Tara; a1, a2 contours
 
         #flg += 2 ** 0  # 1 -- RMSE
 
