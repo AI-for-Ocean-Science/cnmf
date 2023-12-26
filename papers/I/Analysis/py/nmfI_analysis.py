@@ -4,6 +4,8 @@ import numpy as np
 import os
 from importlib import resources
 
+import sklearn
+
 from ihop.iops import pca as ihop_pca
 
 from cnmf.oceanography import iops
@@ -16,6 +18,8 @@ from IPython import embed
 # Wavelength range
 min_wv=406. 
 high_cut=704.
+pca_path = os.path.join(resources.files('cnmf'),
+                            'data', 'L23')
 
 def loisel23_components(iop:str, N_NMF:int=10, 
     min_wv:float=min_wv, high_cut:float=high_cut,
@@ -59,8 +63,9 @@ def loisel23_components(iop:str, N_NMF:int=10,
 
     print(f'Wrote: {outfile}')
 
-def l23_nmf_on_tara(sig:float=0.0005,
-                    cut:int=None):
+def l23_on_tara(sig:float=0.0005,
+                    cut:int=None,
+                    decomp:str='NMF'):
     """ Perform NMF analysis on Tara data, using the L23 fit as a basis.
 
     Args:
@@ -74,13 +79,16 @@ def l23_nmf_on_tara(sig:float=0.0005,
     M = d['M']
     coeff = d['coeff']
     wave = d['wave']
+    L23_pca_N20 = ihop_pca.load('pca_L23_X4Y0_a_N4.npz',
+                                pca_path=pca_path)
 
     # Calculate Tara
-    wv_grid, final_tara, l23_a = iops.tara_matched_to_l23(
+    wv_grid, final_tara, _, l23_a = iops.tara_matched_to_l23(
         low_cut=min_wv, high_cut=high_cut)
     i0 = np.argmin(np.abs(wv_grid[0]-wave))
     assert np.isclose(wv_grid[0], wave[i0])
     i1 = np.argmin(np.abs(wv_grid[-1]-wave))
+    assert i0 == 0 # Should be the same now
     #embed(header='nmf analysis 82')
 
     # Cut?
@@ -89,31 +97,45 @@ def l23_nmf_on_tara(sig:float=0.0005,
     V = np.ones_like(final_tara) / sig**2
     M_tara = M[:,i0:i1+1]
 
-    # Build it up one component at a time
-    H_tmp = None
-    for nn in range(M_tara.shape[0]):
-        print("Working on component: ", nn+1)
-        W_ini = M_tara[0:nn+1,:].T
-        H_rand = np.random.rand(1, final_tara.shape[0])
-        if H_tmp is not None:
-            H_ini = np.vstack((H_tmp, H_rand))
-        else:
-            H_ini = H_rand
-    
-        tara_NMF = nmf.NMF(final_tara.T,
-                       V=V.T, W=W_ini, H=H_ini,
-                       n_components=nn+1)
-        # Do it
-        tara_NMF.SolveNMF(H_only=True, verbose=True)
-        # Save H
-        H_tmp = tara_NMF.H.copy()
-        #embed(header='iops 84')
+    if decomp == 'NMF':
+        # Build it up one component at a time
+        H_tmp = None
+        for nn in range(M_tara.shape[0]):
+            print("Working on component: ", nn+1)
+            W_ini = M_tara[0:nn+1,:].T
+            H_rand = np.random.rand(1, final_tara.shape[0])
+            if H_tmp is not None:
+                H_ini = np.vstack((H_tmp, H_rand))
+            else:
+                H_ini = H_rand
+        
+            tara_NMF = nmf.NMF(final_tara.T,
+                        V=V.T, W=W_ini, H=H_ini,
+                        n_components=nn+1)
+            # Do it
+            tara_NMF.SolveNMF(H_only=True, verbose=True)
+            # Save H
+            H_tmp = tara_NMF.H.copy()
+            #embed(header='iops 84')
+        # Repackage
+        save_coeff = tara_NMF.H
+        save_M = M_tara
+        outfile = cnmf_io.pcanmf_filename('Tara_L23', 'NMF', N_NMF, iop=iop)
+    elif decomp == 'PCA':
+        # Init the PCA
+        pca = sklearn.decomposition.PCA(n_components=L23_pca_N20['M'].shape[0])
+        pca.components_ = L23_pca_N20['M']
+        pca.mean_ = L23_pca_N20['mean']
+        # Apply
+        save_coeff = pca.transform(final_tara)
+        save_M = L23_pca_N20['M']
+        outfile = cnmf_io.pcanmf_filename('Tara_L23', 'PCA', N_NMF, iop=iop)
+    else:
+        raise ValueError(f"Unknown decomp: {decomp}")
 
     # Save
-    outfile = cnmf_io.nmf_filename('Tara_L23', N_NMF=N_NMF, iop=iop)
-    cnmf_io.save_nmf(outfile, M_tara, tara_NMF.H, final_tara,
+    cnmf_io.save_nmf(outfile, save_M, save_coeff, final_tara,
                      None, V, wv_grid, None)
-
 
 def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
     """
@@ -178,9 +200,12 @@ if __name__ == '__main__':
                               pca_path=pca_path, outroot=outroot)
 
 
-    # L23 NMF on Tara
-    l23_nmf_on_tara(cut=40000)
     '''
+    # L23 PCA on Tara
+    l23_on_tara(decomp='PCA')
+
+    # L23 NMF on Tara
+    #l23_nmf_on_tara(cut=40000)
 
     # NMF on Tara alone
-    tara_components('a', N_NMF=4)
+    #tara_components('a', N_NMF=4)

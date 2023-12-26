@@ -86,7 +86,7 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
             Defaults to 0.
 
     Returns:
-        tuple: wavelength values, Tara spectra, L23 spectra
+        tuple: wavelength values, Tara spectra, Tara ids, L23 spectra
     """
 
     # Load up the data
@@ -133,8 +133,10 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
     # Cut down: Aggressive but necessary
     final_tara = final_tara[mask,:]
 
-    # Return
+    #embed(header='iops 126')
 
+    # ##########################################
+    # Return
     # For NMF imaging?
     if for_nmf_imaging:
         # Build mask and error
@@ -150,4 +152,5 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
         return wv_grid, final_tara, mask, err
 
     else:
-        return wv_grid, final_tara, l23_a
+        tara_ids = None
+        return wv_grid, final_tara, tara_ids, l23_a

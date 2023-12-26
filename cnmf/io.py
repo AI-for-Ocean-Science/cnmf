@@ -5,10 +5,10 @@ from importlib import resources
 
 import numpy as np
 
-def nmf_filename(nmf_fit:str, N_NMF:int, iop:str=None):
+def pcanmf_filename(nmf_fit:str, decomp:str, N_NMF:int, iop:str=None):
     path = os.path.join(resources.files('cnmf'),
                         'data', nmf_fit)
-    outroot = os.path.join(path, f'{nmf_fit}_NMF_{N_NMF:02d}')
+    outroot = os.path.join(path, f'{nmf_fit}_{decomp}_{N_NMF:02d}')
     if iop is not None:
         outroot += f'_{iop}'
     # FInish
@@ -57,7 +57,7 @@ def load_nmf(nmf_fit:str, N_NMF:int, iop:str=None):
     """
 
     # File name
-    nmf_file = nmf_filename(nmf_fit, N_NMF, iop=iop)
+    nmf_file = pcanmf_filename(nmf_fit, 'NMF', N_NMF, iop=iop)
 
     # Load + Return
     return np.load(nmf_file)
