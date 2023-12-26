@@ -530,7 +530,7 @@ def fig_l23_vs_tara_M(
 
     # #########################################################
     # Figure
-    figsize=(6,6)
+    figsize=(8,6)
     fig = plt.figure(figsize=figsize)
     plt.clf()
     gs = gridspec.GridSpec(1,1)
@@ -539,12 +539,15 @@ def fig_l23_vs_tara_M(
     # Plot the Ms
     for ss in range(N_NMF):
         ax.plot(wave_l23, M_l23[ss], label=r'L23: $\xi_'+f'{ss+1}'+'$', ls=':')
+    for ss in range(N_NMF):
         ax.plot(wave_tara, M_tara[ss], label=r'Tara: $\xi_'+f'{ss+1}'+'$')
 
     # Axes
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Basis vector')
     ax.legend(fontsize=15.)
+
+    plotting.set_fontsize(ax, 15)
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -667,6 +670,10 @@ def main(flg):
     if flg & (2**4):
         fig_l23_tara_coeffs()
 
+    # Compare the NMF bases
+    if flg & (2**5):
+        fig_l23_vs_tara_M()
+
 
     # NMF basis
     if flg & (2**11):
@@ -688,7 +695,7 @@ def main(flg):
         fig_fit_cdom()
 
     # Explained variance
-    if flg & (2**5):
+    if flg & (2**35):
         fig_explain_variance()
 
     # NMF RMSE
@@ -712,6 +719,7 @@ if __name__ == '__main__':
         #flg += 2 ** 2  # 4 -- L23: PCA and NMF basis
         #flg += 2 ** 3  # 8 -- L23: Fit NMF basis functions with CDOM, Chl
         #flg += 2 ** 4  # 16 -- L23+Tara; a1, a2 contours
+        #flg += 2 ** 5  # 32 -- L23,Tara compare NMF basis functions
 
         #flg += 2 ** 0  # 1 -- RMSE
 
