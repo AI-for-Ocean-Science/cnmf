@@ -498,6 +498,10 @@ def fig_l23_tara_coeffs(
                 log_scale=True)
         # Label
         ax.set_xlabel(r'$a_'+f'{ss+1}'+'$')
+        # Minor ticks
+        ax.tick_params(axis='x', which='both', bottom=True, 
+                       top=True, labelbottom=True, 
+                       labeltop=False)
         # Fontsize
         plotting.set_fontsize(ax, 12)
         # Range
