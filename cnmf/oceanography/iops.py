@@ -86,7 +86,7 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
             Defaults to 0.
 
     Returns:
-        tuple: wavelength values, Tara spectra, Tara ids, L23 spectra
+        tuple: wavelength values, Tara spectra, Tara UIDs, L23 spectra
     """
 
     # Load up the data
@@ -132,6 +132,7 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
 
     # Cut down: Aggressive but necessary
     final_tara = final_tara[mask,:]
+    tara_uid = tara_db.UID.values[mask]
 
     #embed(header='iops 126')
 
@@ -152,5 +153,4 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
         return wv_grid, final_tara, mask, err
 
     else:
-        tara_ids = None
-        return wv_grid, final_tara, tara_ids, l23_a
+        return wv_grid, final_tara, tara_uid, l23_a

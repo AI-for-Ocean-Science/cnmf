@@ -83,7 +83,7 @@ def l23_on_tara(sig:float=0.0005,
                                 pca_path=pca_path)
 
     # Calculate Tara
-    wv_grid, final_tara, _, l23_a = iops.tara_matched_to_l23(
+    wv_grid, final_tara, tara_UIDs, l23_a = iops.tara_matched_to_l23(
         low_cut=min_wv, high_cut=high_cut)
     i0 = np.argmin(np.abs(wv_grid[0]-wave))
     assert np.isclose(wv_grid[0], wave[i0])
@@ -94,6 +94,7 @@ def l23_on_tara(sig:float=0.0005,
     # Cut?
     if cut is not None:
         final_tara = final_tara[:cut]
+        tara_UIDs = tara_UIDs[:cut]
     V = np.ones_like(final_tara) / sig**2
     M_tara = M[:,i0:i1+1]
 
@@ -135,7 +136,8 @@ def l23_on_tara(sig:float=0.0005,
 
     # Save
     cnmf_io.save_nmf(outfile, save_M, save_coeff, final_tara,
-                     None, V, wv_grid, None)
+                     None, V, wv_grid, None,
+                     UID=tara_UIDs)
 
 def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
     """
@@ -148,7 +150,8 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
     """
 
     # Output file
-    outfile = cnmf_io.nmf_filename('Tara', N_NMF=N_NMF, iop=iop)
+    outfile = cnmf_io.pcanmf_filename(
+        'Tara', 'NMF', N_NMF=N_NMF, iop=iop)
     if (not clobber) and (os.path.isfile(outfile)):
         print(f'File exists: {outfile}')
         return
@@ -202,10 +205,11 @@ if __name__ == '__main__':
 
     '''
     # L23 PCA on Tara
-    l23_on_tara(decomp='PCA')
+    #l23_on_tara(decomp='PCA')
 
     # L23 NMF on Tara
-    #l23_nmf_on_tara(cut=40000)
+    l23_on_tara(cut=40000)
 
     # NMF on Tara alone
     #tara_components('a', N_NMF=4)
+    #tara_components('a', N_NMF=20)

@@ -17,7 +17,7 @@ def pcanmf_filename(nmf_fit:str, decomp:str, N_NMF:int, iop:str=None):
 
 def save_nmf(outfile:str, M:np.ndarray, coeff:np.ndarray, spec:np.ndarray,
     mask:np.ndarray, err:np.ndarray, wave:np.ndarray,
-    Rs:np.ndarray):
+    Rs:np.ndarray, UID:np.ndarray=None):
     """
     Save the NMF results to a file in npz format.
 
@@ -30,6 +30,7 @@ def save_nmf(outfile:str, M:np.ndarray, coeff:np.ndarray, spec:np.ndarray,
         err (np.ndarray): The error matrix.
         wave (np.ndarray): The wavelength array.
         Rs (np.ndarray): The spatial correlation matrix.
+        UID (np.ndarray, optional): The unique ID array. Defaults to None.
     """
     # Create output directory?
     if not os.path.exists(os.path.dirname(outfile)):
@@ -37,7 +38,8 @@ def save_nmf(outfile:str, M:np.ndarray, coeff:np.ndarray, spec:np.ndarray,
     # Save
     np.savez(outfile, M=M, coeff=coeff,
              spec=spec, mask=mask,
-             err=err, wave=wave, Rs=Rs)
+             err=err, wave=wave, Rs=Rs,
+             UID=UID)
     print(f'Wrote: {outfile}')
              
 

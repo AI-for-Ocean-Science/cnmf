@@ -347,12 +347,15 @@ def fig_nmf_basis(outroot:str='fig_nmf_basis',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
-                 nmf_fit:str='L23', N_NMF:int=4,
+def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
                  icdom:int=1, # 0-indexing
                  ichl:int=0, # 0-indexing
                  cdom_max:float=600.):
 
+    if nmf_fit == 'L23':
+        outfile='fig_l23_fit_nmf.png'
+    elif nmf_fit == 'Tara':
+        outfile='fig_tara_fit_nmf.png'
     # Load
     d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
     M = d['M']
@@ -389,7 +392,7 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
 
     # NMF
     ax_cdom.step(wave, M[icdom], 
-                 label=r'$\xi_'+f'{icdom+1}'+'$', color='k',
+                 label=f'{nmf_fit}: '+r'$\xi_'+f'{icdom+1}'+'$', color='k',
                  lw=2)
 
     #ax_cdom.plot(cut_wv, a_cdom_exp_fit, 
@@ -428,7 +431,8 @@ def fig_l23_fit_nmf(outfile:str='fig_l23_fit_nmf.png',
     new_model = ans[0]*chla + ans[1]*chlb + ans[2]*chlc + ans[3]*peri + ans[4]*beta
     
     # Plot
-    ax_chl.plot(wave, a_chl, color='k', label=r'$\xi_'+f'{ichl+1}'+'$')
+    ax_chl.plot(wave, a_chl, color='k', 
+                label=f'{nmf_fit}: '+r'$\xi_'+f'{ichl+1}'+'$')
     ax_chl.plot(wave[gd_wave2], new_model[gd_wave2], 'ro', label='model')
     #https://www.allmovie.com/artist/akira-kurosawa-vn6780882/filmography
 
@@ -668,7 +672,7 @@ def main(flg):
 
     # L23: Fit NMF 1, 2
     if flg & (2**3):
-        fig_l23_fit_nmf()
+        fig_fit_nmf()
 
     # Coefficient distributions for L23 NMF
     if flg & (2**4):
@@ -677,6 +681,11 @@ def main(flg):
     # Compare the NMF bases
     if flg & (2**5):
         fig_l23_vs_tara_M()
+
+    # Compare the NMF bases
+    if flg & (2**6):
+        fig_fit_nmf(nmf_fit='Tara', cdom_max=530.,
+                    icdom=0, ichl=1)
 
 
     # NMF basis
@@ -724,6 +733,8 @@ if __name__ == '__main__':
         #flg += 2 ** 3  # 8 -- L23: Fit NMF basis functions with CDOM, Chl
         #flg += 2 ** 4  # 16 -- L23+Tara; a1, a2 contours
         #flg += 2 ** 5  # 32 -- L23,Tara compare NMF basis functions
+
+        #flg += 2 ** 6  # 64 -- Fit Tara basis functions
 
         #flg += 2 ** 0  # 1 -- RMSE
 
