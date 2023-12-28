@@ -34,7 +34,7 @@ def loisel23_components(iop:str, N_NMF:int=10,
     """
 
     # Output file
-    outfile = cnmf_io.nmf_filename('L23', N_NMF=N_NMF, iop=iop)
+    outfile = cnmf_io.pcanmf_filename('L23', 'NMF', N_NMF=N_NMF, iop=iop)
     if (not clobber) and (os.path.isfile(outfile)):
         print(f'File exists: {outfile}')
         return
