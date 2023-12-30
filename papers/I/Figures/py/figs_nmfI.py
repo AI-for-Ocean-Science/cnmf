@@ -350,7 +350,8 @@ def fig_nmf_basis(outroot:str='fig_nmf_basis',
 def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
                  icdom:int=1, # 0-indexing
                  ichl:int=0, # 0-indexing
-                 cdom_max:float=600.):
+                 cdom_max:float=600.,
+                 add_gaussians:bool=False):
 
     if nmf_fit == 'L23':
         outfile='fig_l23_fit_nmf.png'
@@ -387,7 +388,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
     gs = gridspec.GridSpec(1,2)
 
     # #########################################################
-    # CDOM fits
+    # Plot CDOM fits
     ax_cdom = plt.subplot(gs[icdom])
 
     # NMF
@@ -419,17 +420,44 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
     chlc = pigments.a_chl(wave, ctype='c12')
     peri = pigments.a_chl(wave, pigment='Peri')
     beta = pigments.a_chl(wave, pigment='beta-Car')
+    G584 = pigments.a_chl(wave, source='chase', pigment='G584')
 
     gd1 = (wave > 420.) & (wave < 550.)
     gd2 = (wave > 589.) & (wave < 700.)
     gd_wave2 = gd1 | gd2
+    if add_gaussians:
+        gd3 = (wave > 560.) & (wave < 620.)
+        gd_wave2 |= gd3
+
+    add_pigments=[peri[gd_wave2], beta[gd_wave2]]
+    if add_gaussians:
+        add_pigments += [G584[gd_wave2]]
 
     # Fit
+    sigma = np.ones_like(wave[gd_wave2])*0.05
     ans, cov = pigments.fit_a_chl(
         wave[gd_wave2], a_chl[gd_wave2], 
-        add_pigments=[peri[gd_wave2], beta[gd_wave2]])
-    new_model = ans[0]*chla + ans[1]*chlb + ans[2]*chlc + ans[3]*peri + ans[4]*beta
+        add_pigments=add_pigments,
+        fit_type='positive', sigma=sigma)
+    print(f'Chl fit: {ans}')
+
+    all_pigments=[peri, beta]
+    if add_gaussians:
+        all_pigments += [G584]
+    def mk_model(*pargs):
+        # pargs[0] is not used
+        # Chl
+        a = pargs[0]*chla + pargs[1]*chlb + pargs[2]*chlc
+        # Others?
+        if all_pigments is not None:
+            for i, pigment in enumerate(all_pigments):
+                a += pargs[3+i]*pigment
+        # Return
+        return a
+    #embed(header='fig_fit_nmf 457')
+    new_model = mk_model(*ans)
     
+    # #########################
     # Plot
     ax_chl.plot(wave, a_chl, color='k', 
                 label=f'{nmf_fit}: '+r'$\xi_'+f'{ichl+1}'+'$')
@@ -447,6 +475,8 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
     # New ones
     ax_chl.plot(wave, peri*ans[3], color='purple', label='Peri', ls=':')
     ax_chl.plot(wave, beta*ans[4], color='orange', label=r'$\beta$-Car', ls=':')
+    if add_gaussians:
+        ax_chl.plot(wave, G584*ans[5], color='gray', label=r'Chl-c(585)', ls=':')
 
     # Finish
     for ax in [ax_cdom, ax_chl]:
@@ -671,8 +701,8 @@ def main(flg):
         fig_nmf_pca_basis()
 
     # L23: Fit NMF 1, 2
-    if flg & (2**3):
-        fig_fit_nmf()
+    if flg & (2**3):  # 8
+        fig_fit_nmf(add_gaussians=True)
 
     # Coefficient distributions for L23 NMF
     if flg & (2**4):
@@ -682,7 +712,7 @@ def main(flg):
     if flg & (2**5):
         fig_l23_vs_tara_M()
 
-    # Compare the NMF bases
+    # Fit Tara basis functions
     if flg & (2**6):
         fig_fit_nmf(nmf_fit='Tara', cdom_max=530.,
                     icdom=0, ichl=1)
