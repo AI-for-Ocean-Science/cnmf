@@ -350,13 +350,15 @@ def fig_nmf_basis(outroot:str='fig_nmf_basis',
 def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
                  icdom:int=1, # 0-indexing
                  ichl:int=0, # 0-indexing
+                 outfile:str=None,
                  cdom_max:float=600.,
                  add_gaussians:bool=False):
 
-    if nmf_fit == 'L23':
-        outfile='fig_l23_fit_nmf.png'
-    elif nmf_fit == 'Tara':
-        outfile='fig_tara_fit_nmf.png'
+    if outfile is None:
+        if nmf_fit == 'L23':
+            outfile='fig_l23_fit_nmf.png'
+        elif nmf_fit == 'Tara':
+            outfile='fig_tara_fit_nmf.png'
     # Load
     d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
     M = d['M']
@@ -389,7 +391,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
 
     # #########################################################
     # Plot CDOM fits
-    ax_cdom = plt.subplot(gs[icdom])
+    ax_cdom = plt.subplot(gs[min(icdom,1)])
 
     # NMF
     ax_cdom.step(wave, M[icdom], 
@@ -702,7 +704,9 @@ def main(flg):
 
     # L23: Fit NMF 1, 2
     if flg & (2**3):  # 8
-        fig_fit_nmf(add_gaussians=True)
+        #fig_fit_nmf(add_gaussians=True)
+        fig_fit_nmf(outfile='fig_xi3_l23_fit.png',
+                    icdom=2, cdom_max=550.)
 
     # Coefficient distributions for L23 NMF
     if flg & (2**4):
