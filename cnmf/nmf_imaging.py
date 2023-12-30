@@ -73,7 +73,7 @@ def decolumnize(data, mask):
 
 def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiters = 1e3, 
                   oneByOne = False, path_save = None,
-                  seed:int=None):
+                  seed:int=None, normalize:bool=False):
     #"""ref and ref_err should be (n * height * width) where n is the number of references. Mask is the region we are interested in.
     #if mask is a 3D array (binary, 0 and 1), then you can mask out different regions in the ref.
     #if path_save is provided, then the code will star from there.
@@ -122,12 +122,14 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
     if not oneByOne:
         print("Building components NOT one by one... If you want the one-by-one method (suggested), please set oneByOne = True.")
         if len(mask.shape) == 2:
-            g_img = nmf.NMF(ref_columnized, V=1.0/ref_err_columnized**2, n_components=n_components)
+            g_img = nmf.NMF(ref_columnized, V=1.0/ref_err_columnized**2, n_components=n_components,
+                            normalize=normalize)
             chi2, time_used = g_img.SolveNMF(maxiters=maxiters)
             components_column = g_img.W/np.sqrt(np.nansum(g_img.W**2, axis = 0)) #normalize the components
             components = decolumnize(components_column, mask = mask)
         elif len(mask.shape) == 3: # different missing data at different references.
-            g_img = nmf.NMF(ref_columnized, V=1.0/ref_err_columnized**2, M = mask_columnized, n_components=n_components)
+            g_img = nmf.NMF(ref_columnized, V=1.0/ref_err_columnized**2, M = mask_columnized, n_components=n_components,
+                            normalize=normalize)
             chi2, time_used = g_img.SolveNMF(maxiters=maxiters)
             components_column = g_img.W/np.sqrt(np.nansum(g_img.W**2, axis = 0)) #normalize the components
             
@@ -144,7 +146,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                     print("\t" + str(i+1) + " of " + str(n_components))
                     n = i + 1
                     if (i == 0):
-                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, n_components= n)
+                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, n_components= n,
+                                        normalize=normalize)
                     else:
                         W_ini = np.random.rand(ref_columnized.shape[0], n)
                         W_ini[:, :(n-1)] = np.copy(g_img.W)
@@ -154,7 +157,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                         H_ini[:(n-1), :] = np.copy(g_img.H)
                         H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n)
+                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n,
+                                        normalize=normalize)
                     chi2 = g_img.SolveNMF(maxiters=maxiters)
             
                     components_column = g_img.W/np.sqrt(np.nansum(g_img.W**2, axis = 0)) #normalize the components
@@ -167,7 +171,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                         print("\t" + str(i+1) + " of " + str(n_components))
                         n = i + 1
                         if (i == 0):
-                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, n_components= n)
+                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, n_components= n,
+                                            normalize=normalize)
                         else:
                             W_ini = np.random.rand(ref_columnized.shape[0], n)
                             W_ini[:, :(n-1)] = np.copy(g_img.W)
@@ -177,7 +182,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                             H_ini[:(n-1), :] = np.copy(g_img.H)
                             H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n)
+                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n,
+                                            normalize=normalize)
                         chi2 = g_img.SolveNMF(maxiters=maxiters)
                         print('\t\t\t Calculation for ' + str(n) + ' components done, overwriting raw 2D component matrix at ' + path_save + '_comp.npy')
                         #fits.writeto(path_save + '_comp.fits', g_img.W, overwrite = True)
@@ -212,7 +218,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                                 H_ini[:(n-1), :] = np.copy(H_assign)
                                 H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n)
+                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n,
+                                                normalize=normalize)
                             else:
                                 W_ini = np.random.rand(ref_columnized.shape[0], n)
                                 W_ini[:, :(n-1)] = np.copy(g_img.W)
@@ -222,7 +229,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                                 H_ini[:(n-1), :] = np.copy(g_img.H)
                                 H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n)
+                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, n_components= n,
+                                                normalize=normalize)
                             chi2 = g_img.SolveNMF(maxiters=maxiters)
                             print('\t\t\t Calculation for ' + str(n) + ' components done, overwriting raw 2D component matrix at ' + path_save + '_comp.npy')
                             np.save(path_save + '_comp.npy', g_img.W)
@@ -238,7 +246,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                     print("\t" + str(i+1) + " of " + str(n_components))
                     n = i + 1
                     if (i == 0):
-                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, M = mask_columnized, n_components= n)
+                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, M = mask_columnized, n_components= n,
+                                        normalize=normalize)
                     else:
                         W_ini = np.random.rand(ref_columnized.shape[0], n)
                         W_ini[:, :(n-1)] = np.copy(g_img.W)
@@ -248,7 +257,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                         H_ini[:(n-1), :] = np.copy(g_img.H)
                         H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n)
+                        g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n,
+                                        normalize=normalize)
                     chi2 = g_img.SolveNMF(maxiters=maxiters)
             
                     components_column = g_img.W/np.sqrt(np.nansum(g_img.W**2, axis = 0)) #normalize the components
@@ -261,7 +271,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                         print("\t" + str(i+1) + " of " + str(n_components))
                         n = i + 1
                         if (i == 0):
-                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, M = mask_columnized, n_components= n)
+                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, M = mask_columnized, n_components= n,
+                                            normalize=normalize)
                         else:
                             W_ini = np.random.rand(ref_columnized.shape[0], n)
                             W_ini[:, :(n-1)] = np.copy(g_img.W)
@@ -271,7 +282,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                             H_ini[:(n-1), :] = np.copy(g_img.H)
                             H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n)
+                            g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n,
+                                            normalize=normalize)
                         chi2 = g_img.SolveNMF(maxiters=maxiters)
                         print('\t\t\t Calculation for ' + str(n) + ' components done, overwriting raw 2D component matrix at ' + path_save + '_comp.npy')
                         #fits.writeto(path_save + '_comp.fits', g_img.W, overwrite = True)
@@ -304,7 +316,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                                 H_ini[:(n-1), :] = np.copy(H_assign)
                                 H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n)
+                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n,
+                                                normalize=normalize)
                             else:
                                 W_ini = np.random.rand(ref_columnized.shape[0], n)
                                 W_ini[:, :(n-1)] = np.copy(g_img.W)
@@ -314,7 +327,8 @@ def NMFcomponents(ref, ref_err = None, mask = None, n_components = None, maxiter
                                 H_ini[:(n-1), :] = np.copy(g_img.H)
                                 H_ini = np.array(H_ini, order = 'C') #C ordering, row elements contiguous in memory.
                 
-                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n)
+                                g_img = nmf.NMF(ref_columnized, V = 1.0/ref_err_columnized**2, W = W_ini, H = H_ini, M = mask_columnized, n_components= n,
+                                                normalize=normalize)
                             chi2 = g_img.SolveNMF(maxiters=maxiters)
                             print('\t\t\t Calculation for ' + str(n) + ' components done, overwriting raw 2D component matrix at ' + path_save + '_comp.npy')
                             np.save(path_save + '_comp.npy', g_img.W)
@@ -385,7 +399,8 @@ def NMFmodelling(trg, components, n_components = None, trg_err = None, mask_comp
     trg_column = columnize(trg, mask = mask)
     trg_err_column = columnize(trg_err, mask = mask)
     if not cube:
-        trg_img = nmf.NMF(trg_column, V=1/trg_err_column**2, W=components_column, n_components = n_components)
+        trg_img = nmf.NMF(trg_column, V=1/trg_err_column**2, W=components_column, n_components = n_components,
+                          normalize=normalize)
         (chi2, time_used) = trg_img.SolveNMF(H_only=True, maxiters = maxiters)
     
         coefs = trg_img.H
@@ -413,7 +428,8 @@ def NMFmodelling(trg, components, n_components = None, trg_err = None, mask_comp
         
         for i in range(n_components):
             print("\t" + str(i+1) + " of " + str(n_components))
-            trg_img = nmf.NMF(trg_column, V=1/trg_err_column**2, W=components_column[:, :i+1], n_components = i + 1)
+            trg_img = nmf.NMF(trg_column, V=1/trg_err_column**2, W=components_column[:, :i+1], n_components = i + 1,
+                              normalize=normalize)
             (chi2, time_used) = trg_img.SolveNMF(H_only=True, maxiters = maxiters)
     
             coefs = trg_img.H

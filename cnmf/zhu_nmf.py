@@ -100,7 +100,7 @@ class NMF:
       -- Iterative multiplicative update rule
 
     Input: 
-      -- X: m x n matrix, the dataset
+      -- X: m x n matrix, the dataset (dimensionality, nitems)
 
     Optional Input/Output: 
       -- n_components: desired size of the basis set, default 5
@@ -150,7 +150,8 @@ class NMF:
         -- 30-Nov-2014, Started, BGT, JHU
     """
 
-    def __init__(self, X, W=None, H=None, V=None, M=None, n_components=5):
+    def __init__(self, X, W=None, H=None, V=None, M=None, n_components=5,
+                 normalize:bool=False):
         """
         Initialization
         
@@ -164,6 +165,7 @@ class NMF:
           -- M: m x n binary matrix, the mask, False means missing/undesired data
           -- H: n_components x n matrix, the H matrix, usually interpreted as the coefficients
           -- W: m x n_components matrix, the W matrix, usually interpreted as the basis set
+          -- normalize: normalize the basis set to have unit sum, default False
         """
 
         # I'm making a copy for the safety of everything; should not be a bottleneck
@@ -175,6 +177,7 @@ class NMF:
         self.n_components = n_components
         self.maxiters = 1000
         self.tol = _smallnumber
+        self.normalize = normalize
 
         if (W is None):
             self.W = np.random.rand(self.X.shape[0], self.n_components)
@@ -302,6 +305,16 @@ class NMF:
                     self.W[...,nfixed:] = tmp[...,nfixed:]
                 else:
                     self.W = tmp
+
+            # Normalize??
+            if self.normalize:
+                self.W /= np.sum(self.W, axis=0)
+                # Another H
+                H_up = dot(XVT, self.W)
+                WHVT = multiply(VT, np.dot(self.W, self.H).T)
+                H_down = dot(WHVT, self.W)
+                self.H = self.H*H_up.T/H_down.T
+                
 
             # chi2
             oldchi2 = chi2
