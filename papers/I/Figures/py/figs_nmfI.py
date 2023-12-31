@@ -148,8 +148,10 @@ def fig_l23_pca_nmf_var(
     nmf_fit:str='L23'):
 
     # Load up
-    L23_pca_N20 = ihop_pca.load('pca_L23_X4Y0_a_N20.npz',
-                                pca_path=pca_path)
+    if nmf_fit == 'L23':
+        pca_N20 = ihop_pca.load('pca_L23_X4Y0_a_N20.npz',
+                                    pca_path=pca_path)
+        #pca_N20 = ihop_pca.load('pca_L23_X4Y0_Tara_a_N20.npz')
     #L23_Tara_pca = ihop_pca.load(f'pca_L23_X4Y0_Tara_a_N{N}.npz')
     #wave = L23_pca_N20['wavelength']
 
@@ -176,30 +178,27 @@ def fig_l23_pca_nmf_var(
     # PCA
     ax= plt.subplot(gs[0])
 
-    ax.plot(
-        np.arange(L23_pca_N20['explained_variance'].size-1)+2,
-        1-np.cumsum(L23_pca_N20['explained_variance'])[1:], 'o-',
-        color=clrs[0])
-    ax.plot(index_list, 1-np.array(evar_list), 'o-', color=clrs[1])
+    if nmf_fit == 'L23':
+        ax.plot(
+            np.arange(pca_N20['explained_variance'].size-1)+2,
+            1-np.cumsum(pca_N20['explained_variance'])[1:], 'o-',
+            color=clrs[0], label='PCA')
+    ax.plot(index_list, 1-np.array(evar_list), 'o-', color=clrs[1],
+            label='NMF')
 
     ax.set_xlabel('Number of Components') 
     ax.set_ylabel('Cumulative Unexplained Variance')
     # Horizontal line at 1
     ax.axhline(1., color='k', ls=':')
 
-
-
     plotting.set_fontsize(ax, 17)
     ax.set_xlim(1., 10)
     ax.set_ylim(1e-5, 0.01)
     ax.set_yscale('log')
-    for ss in range(2):
-        lbl = 'PCA' if ss == 0 else 'NMF'
-        ax.text(0.95, 0.90-ss*0.1, lbl, color=clrs[ss],
-        transform=ax.transAxes,
-            fontsize=22, ha='right')
+    ax.legend(fontsize=15)
 
-    ax.text(0.05, 0.90, 'Loisel+2023', color='k',
+    lbl = 'L23' if nmf_fit == 'L23' else 'Tara'
+    ax.text(0.05, 0.90, lbl, color='k',
         transform=ax.transAxes,
         fontsize=22, ha='left')
 
@@ -511,7 +510,7 @@ def fig_l23_tara_coeffs(
 
     df = pandas.DataFrame()
     df['H1'] = coeff[:,0].tolist() + tara_coeff[0,:].tolist()
-    df['a2'] = coeff[:,1].tolist() + tara_coeff[1,:].tolist()
+    df['H2'] = coeff[:,1].tolist() + tara_coeff[1,:].tolist()
     df['H3'] = coeff[:,2].tolist() + tara_coeff[2,:].tolist()
     df['H4'] = coeff[:,3].tolist() + tara_coeff[3,:].tolist()
     df['sample'] = ['L23']*len(coeff[:,0]) + ['Tara']*len(tara_coeff[0,:])
@@ -523,9 +522,11 @@ def fig_l23_tara_coeffs(
     plt.clf()
     gs = gridspec.GridSpec(2,2)
 
+    xmins = [1e-2, 1e-3, 1e-15, 1e-3]
     for ss in range(4):
         ax= plt.subplot(gs[ss])
-        xmin = 1e-15 if ss < 3 else 1e-3
+        xmin = xmins[ss]
+        #embed(header='fig_l23_tara_coeffs 529')
         keep = df[f'H{ss+1}'] > xmin
         sns.histplot(df[keep], x=f'H{ss+1}',
                      hue='sample', 
@@ -713,7 +714,7 @@ def main(flg):
         fig_l23_tara_coeffs()
 
     # Compare the NMF bases
-    if flg & (2**5):
+    if flg & (2**5): # 32
         fig_l23_vs_tara_M()
 
     # Fit Tara basis functions

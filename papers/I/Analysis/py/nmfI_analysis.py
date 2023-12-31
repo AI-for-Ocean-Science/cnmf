@@ -12,6 +12,7 @@ from cnmf.oceanography import iops
 from cnmf import nmf_imaging
 from cnmf import io as cnmf_io
 from cnmf import zhu_nmf as nmf
+from cnmf import stats as cnmf_stats
 
 from IPython import embed
 
@@ -169,7 +170,7 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
         ref=final_tara, mask=mask, 
         ref_err=err, n_components=N_NMF,
         path_save=outroot, oneByOne=True,
-        seed=12345)
+        seed=12345, normalize=True)
 
     # Load
     M = np.load(outroot+'_comp.npy').T
@@ -209,8 +210,13 @@ if __name__ == '__main__':
     #l23_on_tara(decomp='PCA')
 
     # L23 NMF on Tara
-    l23_on_tara()#cut=40000)
+    #l23_on_tara()#cut=40000)
 
     # NMF on Tara alone
     #tara_components('a', N_NMF=4)
-    #tara_components('a', N_NMF=20)
+    d = cnmf_io.load_nmf('Tara', 4, 'a')
+    evar_i = cnmf_stats.evar_computation(
+            d['spec'], d['coeff'], d['M'])
+    print(f"Explained variance: {evar_i}")
+    #tara_components('a', N_NMF=10)
+
