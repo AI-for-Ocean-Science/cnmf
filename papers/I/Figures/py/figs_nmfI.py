@@ -211,7 +211,7 @@ def fig_l23_pca_nmf_var(
 
 def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
                  nmf_fit:str='L23', Ncomp:int=4,
-                 norm:bool=True):
+                 norm:bool=False):
 
     # Seaborn
     sns.set(style="whitegrid")
@@ -709,7 +709,7 @@ def main(flg):
                     icdom=2, cdom_max=550.)
 
     # Coefficient distributions for L23 NMF
-    if flg & (2**4):
+    if flg & (2**4): # 16
         fig_l23_tara_coeffs()
 
     # Compare the NMF bases

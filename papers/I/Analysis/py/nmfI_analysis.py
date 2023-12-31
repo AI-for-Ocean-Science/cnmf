@@ -23,7 +23,7 @@ pca_path = os.path.join(resources.files('cnmf'),
 
 def loisel23_components(iop:str, N_NMF:int=10, 
     min_wv:float=min_wv, high_cut:float=high_cut,
-    clobber:bool=False):
+    clobber:bool=False, normalize:bool=True):
     """
     Perform NMF analysis on Loisel23 data.
 
@@ -51,6 +51,7 @@ def loisel23_components(iop:str, N_NMF:int=10,
         ref=spec_nw, mask=mask, ref_err=err,
         n_components=N_NMF,
         path_save=outroot, oneByOne=True,
+        normalize=normalize,
         seed=12345)
 
     # Load
@@ -183,14 +184,14 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
 if __name__ == '__main__':
 
 
-    '''
+
     # NMF on L23
-    for n in range(1,10):
     #for n in [3]:
+    for n in range(1,10):
         loisel23_components('a', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
         loisel23_components('bb', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
 
-
+    '''
     # PCA on L23
     pca_path = os.path.join(resources.files('cnmf'),
                             'data', 'L23')
