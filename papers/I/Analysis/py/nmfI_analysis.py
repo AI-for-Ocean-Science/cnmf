@@ -185,13 +185,13 @@ if __name__ == '__main__':
 
 
 
+    '''
     # NMF on L23
     #for n in [3]:
     for n in range(1,10):
         loisel23_components('a', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
         loisel23_components('bb', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
 
-    '''
     # PCA on L23
     pca_path = os.path.join(resources.files('cnmf'),
                             'data', 'L23')
@@ -209,7 +209,7 @@ if __name__ == '__main__':
     #l23_on_tara(decomp='PCA')
 
     # L23 NMF on Tara
-    #l23_on_tara()#cut=40000)
+    l23_on_tara()#cut=40000)
 
     # NMF on Tara alone
     #tara_components('a', N_NMF=4)
