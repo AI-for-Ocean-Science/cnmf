@@ -247,7 +247,7 @@ def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
                 nrm = 1.
             # Step plot
             sns.lineplot(x=wave, y=M[ii]/nrm, 
-                         label=f'{itype}:'+r'  $\xi_'+f'{ii+1}'+'$',
+                         label=f'{itype}:'+r'  $W_'+f'{ii+1}'+'$',
                          ax=ax, lw=2)#, drawstyle='steps-pre')
             #ax.step(wave, M[ii]/nrm, label=f'{itype}:'+r'  $\xi_'+f'{ii+1}'+'$')
 
@@ -330,7 +330,7 @@ def fig_nmf_basis(outroot:str='fig_nmf_basis',
 
     # Plot
     for ss in range(N_NMF):
-        ax.step(wave, M[ss], label=r'$\xi_'+f'{ss}'+'$')
+        ax.step(wave, M[ss], label=r'$W_'+f'{ss}'+'$')
 
 
     ax.set_xlabel('Wavelength (nm)')
@@ -395,7 +395,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
 
     # NMF
     ax_cdom.step(wave, M[icdom], 
-                 label=f'{nmf_fit}: '+r'$\xi_'+f'{icdom+1}'+'$', color='k',
+                 label=f'{nmf_fit}: '+r'$W_'+f'{icdom+1}'+'$', color='k',
                  lw=2)
 
     #ax_cdom.plot(cut_wv, a_cdom_exp_fit, 
@@ -462,7 +462,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
     # #########################
     # Plot
     ax_chl.plot(wave, a_chl, color='k', 
-                label=f'{nmf_fit}: '+r'$\xi_'+f'{ichl+1}'+'$')
+                label=f'{nmf_fit}: '+r'$W_'+f'{ichl+1}'+'$')
     ax_chl.plot(wave[gd_wave2], new_model[gd_wave2], 'ro', label='model')
     #https://www.allmovie.com/artist/akira-kurosawa-vn6780882/filmography
 
@@ -510,10 +510,10 @@ def fig_l23_tara_coeffs(
     tara_coeff = d_tara['coeff']
 
     df = pandas.DataFrame()
-    df['a1'] = coeff[:,0].tolist() + tara_coeff[0,:].tolist()
+    df['H1'] = coeff[:,0].tolist() + tara_coeff[0,:].tolist()
     df['a2'] = coeff[:,1].tolist() + tara_coeff[1,:].tolist()
-    df['a3'] = coeff[:,2].tolist() + tara_coeff[2,:].tolist()
-    df['a4'] = coeff[:,3].tolist() + tara_coeff[3,:].tolist()
+    df['H3'] = coeff[:,2].tolist() + tara_coeff[2,:].tolist()
+    df['H4'] = coeff[:,3].tolist() + tara_coeff[3,:].tolist()
     df['sample'] = ['L23']*len(coeff[:,0]) + ['Tara']*len(tara_coeff[0,:])
 
     # #########################################################
@@ -526,14 +526,14 @@ def fig_l23_tara_coeffs(
     for ss in range(4):
         ax= plt.subplot(gs[ss])
         xmin = 1e-15 if ss < 3 else 1e-3
-        keep = df[f'a{ss+1}'] > xmin
-        sns.histplot(df[keep], x=f'a{ss+1}',
+        keep = df[f'H{ss+1}'] > xmin
+        sns.histplot(df[keep], x=f'H{ss+1}',
                      hue='sample', 
                      ax=ax, bins=100,
                 common_bins=True, stat='density', common_norm=False,
                 log_scale=True)
         # Label
-        ax.set_xlabel(r'$a_'+f'{ss+1}'+'$')
+        ax.set_xlabel(r'$H_'+f'{ss+1}'+'$')
         # Minor ticks
         ax.tick_params(axis='x', which='both', bottom=True, 
                        top=True, labelbottom=True, 
@@ -578,9 +578,9 @@ def fig_l23_vs_tara_M(
 
     # Plot the Ms
     for ss in range(N_NMF):
-        ax.plot(wave_l23, M_l23[ss], label=r'L23: $\xi_'+f'{ss+1}'+'$', ls=':')
+        ax.plot(wave_l23, M_l23[ss], label=r'L23: $W_'+f'{ss+1}'+'$', ls=':')
     for ss in range(N_NMF):
-        ax.plot(wave_tara, M_tara[ss], label=r'Tara: $\xi_'+f'{ss+1}'+'$')
+        ax.plot(wave_tara, M_tara[ss], label=r'Tara: $W_'+f'{ss+1}'+'$')
 
     # Axes
     ax.set_xlabel('Wavelength (nm)')
@@ -705,7 +705,7 @@ def main(flg):
     # L23: Fit NMF 1, 2
     if flg & (2**3):  # 8
         #fig_fit_nmf(add_gaussians=True)
-        fig_fit_nmf(outfile='fig_xi3_l23_fit.png',
+        fig_fit_nmf(outfile='fig_W3_l23_fit.png',
                     icdom=2, cdom_max=550.)
 
     # Coefficient distributions for L23 NMF
