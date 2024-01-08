@@ -1,7 +1,7 @@
 """ NMF Analysis """
 
-import numpy as np
 import os
+import numpy as np
 from importlib import resources
 
 import sklearn
@@ -17,7 +17,7 @@ from cnmf import stats as cnmf_stats
 from IPython import embed
 
 # Wavelength range
-min_wv=406. 
+min_wv=406.
 high_cut=704.
 pca_path = os.path.join(resources.files('cnmf'),
                             'data', 'L23')
@@ -141,7 +141,8 @@ def l23_on_tara(sig:float=0.0005,
                      None, V, wv_grid, None,
                      UID=tara_UIDs)
 
-def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
+def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False,
+        seed:int=12345):
     """
     Perform NMF analysis on Loisel23 data.
 
@@ -149,6 +150,7 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
         iop (str): The IOP dataset to use for analysis, e.g. 'a'
         N_NMF (int, optional): The number of NMF components to extract. Defaults to 10.
         clobber (bool, optional): If True, overwrite existing output file. Defaults to False.
+        seed (int, optional): The random seed to use. Defaults to 12345.
     """
 
     # Output file
@@ -161,7 +163,7 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
     outroot = outfile.replace('.npz','')
 
     # Load
-    wv_grid, final_tara, mask, err = iops.tara_matched_to_l23(
+    wv_grid, final_tara, mask, err, tara_uid = iops.tara_matched_to_l23(
         low_cut=min_wv, for_nmf_imaging=True,
         high_cut=high_cut)
 
@@ -170,7 +172,7 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
         ref=final_tara, mask=mask, 
         ref_err=err, n_components=N_NMF,
         path_save=outroot, oneByOne=True,
-        seed=12345, normalize=True)
+        seed=seed, normalize=True)
 
     # Load
     M = np.load(outroot+'_comp.npy').T
@@ -178,7 +180,8 @@ def tara_components(iop:str='a', N_NMF:int=10, clobber:bool=False):
 
     # Save
     cnmf_io.save_nmf(outfile, M, coeff, final_tara[...,0],
-                     mask[...,0], err[...,0], wv_grid, None)
+                     mask[...,0], err[...,0], wv_grid, None,
+                     UID=tara_uid)
 
     print(f'Wrote: {outfile}')
 
@@ -213,7 +216,7 @@ if __name__ == '__main__':
     #l23_on_tara()#cut=40000)
 
     # NMF on Tara alone
-    #tara_components('a', N_NMF=4)
+    tara_components('a', N_NMF=4)
     d = cnmf_io.load_nmf('Tara', 4, 'a')
     evar_i = cnmf_stats.evar_computation(
             d['spec'], d['coeff'], d['M'])

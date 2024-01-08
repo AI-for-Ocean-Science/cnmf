@@ -150,7 +150,7 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
         final_tara = np.reshape(final_tara, (final_tara.shape[0], 
                      final_tara.shape[1], 1))
 
-        return wv_grid, final_tara, mask, err
+        return wv_grid, final_tara, mask, err, tara_uid
 
     else:
         return wv_grid, final_tara, tara_uid, l23_a
