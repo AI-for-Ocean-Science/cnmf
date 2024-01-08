@@ -96,7 +96,7 @@ def fig_examples(outfile='fig_examples.png',
 
     # Tara spectra
     for ss, a440 in enumerate([6e-3, 2e-2]):
-        ls = '-' if ss == 0 else '--'
+        ls = '-' if ss == 0 else ':'
         it_0 = np.argmin(np.abs(d_tara['spec'][:,i440_tara] - a440))
         # Normalize?
         if norm:
@@ -186,7 +186,7 @@ def fig_l23_pca_nmf_var(
     ax.plot(index_list, 1-np.array(evar_list), 'o-', color=clrs[1],
             label='NMF')
 
-    ax.set_xlabel('Number of Components') 
+    ax.set_xlabel(r'Number of Components ($m$)')
     ax.set_ylabel('Cumulative Unexplained Variance')
     # Horizontal line at 1
     ax.axhline(1., color='k', ls=':')
@@ -213,8 +213,12 @@ def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
                  norm:bool=False):
 
     # Seaborn
-    sns.set(style="whitegrid")
+    sns.set(style="whitegrid",
+            rc={"lines.linewidth": 2.5})
+            # 'axes.edgecolor': 'black'
     sns.set_palette("pastel")
+    sns.set_context("paper")
+    #sns.set_context("poster", linewidth=3)
     #sns.set_palette("husl")
 
     fig = plt.figure(figsize=(12,6))
@@ -250,7 +254,15 @@ def fig_nmf_pca_basis(outfile:str='fig_nmf_pca_basis.png',
                          ax=ax, lw=2)#, drawstyle='steps-pre')
             #ax.step(wave, M[ii]/nrm, label=f'{itype}:'+r'  $\xi_'+f'{ii+1}'+'$')
 
+        # Thick line around the border of the axis
+        ax.spines['top'].set_linewidth(2)
+        
+        # Horizontal line at 0
+        ax.axhline(0., color='k', ls='--')
+
+        # Labels
         ax.set_xlabel('Wavelength (nm)')
+        ax.set_xlim(400., 720.)
 
         lbl = 'PCA' if ss == 0 else 'NMF'
         ax.set_ylabel(lbl+' Basis Functions')
@@ -350,6 +362,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
                  icdom:int=1, # 0-indexing
                  ichl:int=0, # 0-indexing
                  outfile:str=None,
+                 chl_min:float=450.,
                  cdom_max:float=600.,
                  add_gaussians:bool=False):
 
@@ -423,7 +436,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
     beta = pigments.a_chl(wave, pigment='beta-Car')
     G584 = pigments.a_chl(wave, source='chase', pigment='G584')
 
-    gd1 = (wave > 420.) & (wave < 550.)
+    gd1 = (wave > chl_min) & (wave < 550.)
     gd2 = (wave > 589.) & (wave < 700.)
     gd_wave2 = gd1 | gd2
     if add_gaussians:
@@ -717,10 +730,11 @@ def main(flg):
     if flg & (2**5): # 32
         fig_l23_vs_tara_M()
 
-    # Fit Tara basis functions
-    if flg & (2**6):
-        fig_fit_nmf(nmf_fit='Tara', cdom_max=530.,
-                    icdom=0, ichl=1)
+    # Fit nmr
+    if flg & (2**6): # 64
+        fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.)
+        #fig_fit_nmf(nmf_fit='Tara', cdom_max=530.,
+        #            icdom=0, ichl=1)
 
 
     # NMF basis
