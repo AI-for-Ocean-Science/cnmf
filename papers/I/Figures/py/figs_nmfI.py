@@ -587,19 +587,21 @@ def fig_l23_vs_tara_M(
     figsize=(8,6)
     fig = plt.figure(figsize=figsize)
     plt.clf()
-    gs = gridspec.GridSpec(2,2)
+    gs = gridspec.GridSpec(1,1)
+    ax = plt.subplot(gs[0])
 
+    # Plot the Ms
     for ss in range(N_NMF):
-        ax = plt.subplot(gs[ss])
         ax.plot(wave_l23, M_l23[ss], label=r'L23: $W_'+f'{ss+1}'+'$', ls=':')
+    for ss in range(N_NMF):
         ax.plot(wave_tara, M_tara[ss], label=r'Tara: $W_'+f'{ss+1}'+'$')
 
-        # Axes
-        ax.set_xlabel('Wavelength (nm)')
-        ax.set_ylabel('Basis vector')
-        ax.legend(fontsize=15.)
+    # Axes
+    ax.set_xlabel('Wavelength (nm)')
+    ax.set_ylabel('Basis vector')
+    ax.legend(fontsize=15.)
 
-        plotting.set_fontsize(ax, 15)
+    plotting.set_fontsize(ax, 15)
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -780,6 +782,7 @@ if __name__ == '__main__':
         #flg += 2 ** 3  # 8 -- L23: Fit NMF basis functions with CDOM, Chl
         #flg += 2 ** 4  # 16 -- L23+Tara; a1, a2 contours
         #flg += 2 ** 5  # 32 -- L23,Tara compare NMF basis functions
+
         #flg += 2 ** 6  # 64 -- Fit l23 basis functions
 
         #flg += 2 ** 0  # 1 -- RMSE
@@ -793,4 +796,4 @@ if __name__ == '__main__':
     else:
         flg = sys.argv[1]
 
-    main(flg)
+    main(flg)Tara
