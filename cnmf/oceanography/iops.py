@@ -11,59 +11,45 @@ from oceancolor import water
 
 from IPython import embed
 
-def prep_loisel23(iop:str, min_wv:float=400., sigma:float=0.05,
-                  X:int=4, Y:int=0, remove_water:bool=True,
-                  high_cut:float=900.):
-    """ Prep L23 data for NMF analysis
+def prep(spec:np.ndarray, wave:np.ndarray=None, 
+    sigma:float=0.05, remove_water:bool=False):
+    """ Prep IOP data for NMF analysis
 
     Args:
-        iop (str): IOP to use
-        min_wv (float, optional): Minimum wavelength for analysis. Defaults to 400..
-        high_cut (float, optional): High cut wavelength. Defaults to 900..
+        spec (np.ndarray): IOPs
+        wave (np.ndarray, optional): Wavelengths; required if 
+            remove_water is True. Defaults to None.
         sigma (float, optional): Error to use. Defaults to 0.05.
-        X (int, optional): X parameter. Defaults to 4.
-        Y (int, optional): _description_. Defaults to 0.
         remove_water(bool, optional): Remove water??
 
     Returns:
         tuple: 
-            - **spec_nw** (*np.ndarray*) -- IOPs
+            - **new_spec** (*np.ndarray*) -- IOPs
             - **mask** (*np.ndarray*) -- Mask
             - **err** (*np.ndarray*) -- Error
-            - **wave** (*np.ndarray*) -- Wavelengths
-            - **Rs** (*np.ndarray*) -- Rrs
     """
+    # Error check
+    if remove_water and (wave is None):
+        raise ValueError("wave must be provided if remove_water is True")
+    # Prep
+    new_spec = spec.copy()
+    nspec, nwave = spec.shape
 
-    # Load
-    ds = loisel23.load_ds(X, Y)
-
-    # Unpack and cut
-    spec = ds[iop].data
-    wave = ds.Lambda.data 
-    Rs = ds.Rrs.data
-
-    cut = (wave >= min_wv) & (wave <= high_cut)
-    spec = spec[:,cut]
-    wave = wave[cut]
-    Rs = Rs[:,cut]
-
-    # Remove water
-    if iop == 'a' and remove_water:
+    # Remove water?
+    if remove_water:
         a_w = cross.a_water(wave, data='IOCCG')
-        spec_nw = spec - np.outer(np.ones(3320), a_w)
-    else:
-        spec_nw = spec
+        new_spec = new_spec - np.outer(np.ones(nspec), a_w)
 
     # Reshape
-    spec_nw = np.reshape(spec_nw, (spec_nw.shape[0], 
-                     spec_nw.shape[1], 1))
+    new_spec = np.reshape(new_spec, (new_spec.shape[0], 
+                     new_spec.shape[1], 1))
 
     # Build mask and error
-    mask = (spec_nw >= 0.).astype(int)
+    mask = (new_spec >= 0.).astype(int)
     err = np.ones_like(mask)*sigma
 
     # Return
-    return spec_nw, mask, err, wave, Rs
+    return new_spec, mask, err
 
 
 def tara_matched_to_l23(low_cut:float=405., high_cut:float=705., 
