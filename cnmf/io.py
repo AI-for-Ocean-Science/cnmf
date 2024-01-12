@@ -43,23 +43,11 @@ def save_nmf(outfile:str, M:np.ndarray, coeff:np.ndarray, spec:np.ndarray,
     print(f'Wrote: {outfile}')
              
 
-def load_nmf(nmf_fit:str, N_NMF:int, iop:str=None):
-    """ Load a NMF model
-
-    Args:
-        nmf_fit (str): _description_
-        N_NMF (int, optional): _description_. Defaults to None.
-        iop (str, optional): _description_. Defaults to 'a'.
-
-    Raises:
-        IOError: _description_
-
-    Returns:
-        dict-like: numpy save object
-    """
-
+def load_nmf(nmf_fit:str, N_NMF:int, iop:str=None,
+             filename:str=None):
     # File name
-    nmf_file = pcanmf_filename(nmf_fit, 'NMF', N_NMF, iop=iop)
+    if filename is None:
+        filename = pcanmf_filename(nmf_fit, 'NMF', N_NMF, iop=iop)
 
     # Load + Return
-    return np.load(nmf_file)
+    return np.load(filename)
