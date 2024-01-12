@@ -6,7 +6,7 @@ from oceancolor.hydrolight import loisel23
 from oceancolor.iop import cross
 from oceancolor.tara import io as tara_io
 from oceancolor.tara import spectra
-from oceancolor.utils import spectra as spec_utils 
+from oceancolor.utils import spectra as spec_utils
 from oceancolor import water
 
 from IPython import embed
