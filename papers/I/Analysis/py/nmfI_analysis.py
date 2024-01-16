@@ -195,19 +195,21 @@ if __name__ == '__main__':
     for n in range(1,10):
         loisel23_components('a', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
         loisel23_components('bb', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
+    '''
 
     # PCA on L23
     pca_path = os.path.join(resources.files('cnmf'),
                             'data', 'L23')
     outroot = 'pca_L23'
-    ihop_pca.generate_l23_pca(clobber=True, Ncomp=20, X=4, Y=0,
+    #ihop_pca.generate_l23_pca(clobber=True, Ncomp=20, X=4, Y=0,
+    #                          min_wv=min_wv, high_cut=high_cut,
+    #                          pca_path=pca_path, outroot=outroot)
+    #ihop_pca.generate_l23_pca(clobber=True, Ncomp=4, X=4, Y=0,
+    #                          min_wv=min_wv, high_cut=high_cut,
+    #                          pca_path=pca_path, outroot=outroot)
+    ihop_pca.generate_l23_pca(clobber=True, Ncomp=3, X=4, Y=0,
                               min_wv=min_wv, high_cut=high_cut,
                               pca_path=pca_path, outroot=outroot)
-    ihop_pca.generate_l23_pca(clobber=True, Ncomp=4, X=4, Y=0,
-                              min_wv=min_wv, high_cut=high_cut,
-                              pca_path=pca_path, outroot=outroot)
-
-
     '''
     # L23 PCA on Tara
     #l23_on_tara(decomp='PCA')
@@ -222,4 +224,5 @@ if __name__ == '__main__':
             d['spec'], d['coeff'], d['M'])
     print(f"Explained variance: {evar_i}")
     #tara_components('a', N_NMF=10)
+    '''
 

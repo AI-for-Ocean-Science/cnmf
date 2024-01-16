@@ -714,7 +714,9 @@ def main(flg):
 
     # L23: PCA and NMF basis functions
     if flg & (2**2):
-        fig_nmf_pca_basis()
+        #fig_nmf_pca_basis()
+        fig_nmf_pca_basis(Ncomp=3,
+                          outfile='fig_nmf_pca_basis_N3.png')
 
     # L23: Fit NMF 1, 2
     if flg & (2**3):  # 8
@@ -796,4 +798,4 @@ if __name__ == '__main__':
     else:
         flg = sys.argv[1]
 
-    main(flg)Tara
+    main(flg)
