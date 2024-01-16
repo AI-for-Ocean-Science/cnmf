@@ -124,7 +124,7 @@ def fig_examples(outfile='fig_examples.png',
     # Label
     ax_spec.set_xlabel('Wavelength (nm)')
     if norm:
-        ax_spec.set_ylabel(r'$a(\lambda$) Normalized at 440nm')
+        ax_spec.set_ylabel(r'$a_{\rm nw}(\lambda$) Normalized at 440nm')
     else:
         ax_spec.set_ylabel(r'Absorption Coefficient (m$^{-1}$)')
     #ax_spec.set_yscale('log')
