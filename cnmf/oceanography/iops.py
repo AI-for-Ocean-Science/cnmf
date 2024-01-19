@@ -118,7 +118,7 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
 
     # Cut down: Aggressive but necessary
     final_tara = final_tara[mask,:]
-    tara_uid = tara_db.UID.values[mask]
+    tara_uid = tara_db.uid.values[mask]
 
     #embed(header='iops 126')
 

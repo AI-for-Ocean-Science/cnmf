@@ -195,7 +195,6 @@ if __name__ == '__main__':
     for n in range(1,10):
         loisel23_components('a', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
         loisel23_components('bb', N_NMF=n+1, min_wv=min_wv, high_cut=high_cut)
-    '''
 
     # PCA on L23
     pca_path = os.path.join(resources.files('cnmf'),
@@ -224,5 +223,4 @@ if __name__ == '__main__':
             d['spec'], d['coeff'], d['M'])
     print(f"Explained variance: {evar_i}")
     #tara_components('a', N_NMF=10)
-    '''
 
