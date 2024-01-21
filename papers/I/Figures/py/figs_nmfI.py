@@ -535,7 +535,7 @@ def fig_l23_tara_coeffs(
     plt.clf()
     gs = gridspec.GridSpec(2,2)
 
-    xmins = [1e-2, 1e-3, 1e-15, 1e-3]
+    xmins = [1e-2, 1e-3, 1e-5, 1e-3]
     for ss in range(4):
         ax= plt.subplot(gs[ss])
         xmin = xmins[ss]
@@ -781,7 +781,7 @@ if __name__ == '__main__':
         #flg += 2 ** 1  # 2 -- L23: PCA vs NMF Explained variance
         #flg += 2 ** 2  # 4 -- L23: PCA and NMF basis
         #flg += 2 ** 3  # 8 -- L23: Fit NMF basis functions with CDOM, Chl
-        #flg += 2 ** 4  # 16 -- L23+Tara; a1, a2 contours
+        #flg += 2 ** 4  # 16 -- L23+Tara; W1, W2, W3, W4 coefficients
         #flg += 2 ** 5  # 32 -- L23,Tara compare NMF basis functions
 
         #flg += 2 ** 6  # 64 -- Fit l23 basis functions
