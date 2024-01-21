@@ -587,21 +587,20 @@ def fig_l23_vs_tara_M(
     figsize=(8,6)
     fig = plt.figure(figsize=figsize)
     plt.clf()
-    gs = gridspec.GridSpec(1,1)
-    ax = plt.subplot(gs[0])
+    gs = gridspec.GridSpec(2,2)
 
+    for ss in range(N_NMF):
     # Plot the Ms
-    for ss in range(N_NMF):
+        ax = plt.subplot(gs[ss])
         ax.plot(wave_l23, M_l23[ss], label=r'L23: $W_'+f'{ss+1}'+'$', ls=':')
-    for ss in range(N_NMF):
         ax.plot(wave_tara, M_tara[ss], label=r'Tara: $W_'+f'{ss+1}'+'$')
 
-    # Axes
-    ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('Basis vector')
-    ax.legend(fontsize=15.)
+        # Axes
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_ylabel('Basis vector')
+        ax.legend(fontsize=13.)
 
-    plotting.set_fontsize(ax, 15)
+        plotting.set_fontsize(ax, 13)
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
