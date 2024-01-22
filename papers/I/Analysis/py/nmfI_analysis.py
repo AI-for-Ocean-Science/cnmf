@@ -211,10 +211,10 @@ if __name__ == '__main__':
                               pca_path=pca_path, outroot=outroot)
     '''
     # L23 PCA on Tara
-    #l23_on_tara(decomp='PCA')
+    l23_on_tara(decomp='PCA')
 
     # L23 NMF on Tara
-    #l23_on_tara()#cut=40000)
+    l23_on_tara()#cut=40000)
 
     # NMF on Tara alone
     tara_components('a', N_NMF=4)
