@@ -217,10 +217,15 @@ if __name__ == '__main__':
     #l23_on_tara()#cut=40000)
 
     # NMF on Tara alone
-    tara_components('a', N_NMF=4)
-    d = cnmf_io.load_nmf('Tara', 4, 'a')
-    evar_i = cnmf_stats.evar_computation(
-            d['spec'], d['coeff'], d['M'])
-    print(f"Explained variance: {evar_i}")
+    for n in [3,4]:
+        # Do it
+        tara_components('a', N_NMF=n)
+        # Variance
+        d = cnmf_io.load_nmf('Tara', n, 'a')
+        evar_i = cnmf_stats.evar_computation(
+                d['spec'], d['coeff'], d['M'])
+        print(f"Explained variance: {evar_i}")
+        # 3: Explained variance: 0.9975242528085961
+        # 4: Explained variance: 0.9990660778255239
     #tara_components('a', N_NMF=10)
 

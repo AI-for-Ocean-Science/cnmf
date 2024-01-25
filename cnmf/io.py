@@ -50,4 +50,5 @@ def load_nmf(nmf_fit:str, N_NMF:int, iop:str=None,
         filename = pcanmf_filename(nmf_fit, 'NMF', N_NMF, iop=iop)
 
     # Load + Return
+    print(f'Loading: {filename}')
     return np.load(filename)

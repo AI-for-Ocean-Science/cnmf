@@ -730,10 +730,14 @@ def main(flg):
     # Compare the NMF bases
     if flg & (2**5): # 32
         fig_l23_vs_tara_M()
+        #fig_l23_vs_tara_M(outfile='fig_l23_vs_tara_M_N3.png',
+        #    N_NMF=3)
 
     # Fit nmr
     if flg & (2**6): # 64
-        fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.)
+        #fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.)
+        fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.,
+                    N_NMF=3, outfile='fig_l23_fit_nmf_N3.png')
         #fig_fit_nmf(nmf_fit='Tara', cdom_max=530.,
         #            icdom=0, ichl=1)
 
