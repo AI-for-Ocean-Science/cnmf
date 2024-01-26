@@ -712,10 +712,10 @@ def main(flg):
         fig_l23_pca_nmf_var()
 
     # L23: PCA and NMF basis functions
-    if flg & (2**2):
-        #fig_nmf_pca_basis()
-        fig_nmf_pca_basis(Ncomp=3,
-                          outfile='fig_nmf_pca_basis_N3.png')
+    if flg & (2**2): # 4
+        fig_nmf_pca_basis()
+        #fig_nmf_pca_basis(Ncomp=3,
+        #                  outfile='fig_nmf_pca_basis_N3.png')
 
     # L23: Fit NMF 1, 2
     if flg & (2**3):  # 8
