@@ -140,10 +140,6 @@ def fig_examples(outfile='fig_examples.png',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-    # Count em
-    print(f" We have {d_l23['spec'].shape[0]} spectra for L23")
-    print(f" We have {d_tara['spec'].shape[0]} spectra for Tara")
-
 
 # #############################################
 def fig_l23_pca_nmf_var(
@@ -191,7 +187,7 @@ def fig_l23_pca_nmf_var(
             label='NMF')
 
     ax.set_xlabel(r'Number of Components ($m$)')
-    ax.set_ylabel('Unexplained Variance')
+    ax.set_ylabel('Cumulative Unexplained Variance')
     # Horizontal line at 1
     ax.axhline(1., color='k', ls=':')
 
@@ -436,7 +432,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
             label=r'Exponential ($S='+f'{exp_tot_coeff[1]:0.3f}'+r'$)', 
             ls='--', lw=2)
     ax_cdom.plot(cut_wv, a_cdom_pow_fit, 
-            color='r', label='Power Law '+r'($\beta='+f'{pow_coeff[1]:0.1f}'+r'$)', 
+            color='r', label='Power Law '+r'($\alpha='+f'{pow_coeff[1]:0.1f}'+r'$)', 
             ls=':', lw=2)
 
     ax_cdom.axvline(cdom_max, ls='--', color='gray')
@@ -719,6 +715,66 @@ def fig_l23_a_corner(
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4):
+
+    # Load
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
+
+    # Reconstruction
+    tara_recon = np.dot(d['coeff'], d['M'])
+
+
+    # Outfile
+    outfile = f'fig_nmf_{nmf_fit}_i{idxs[0]}_{idxs[1]}.png'
+
+    fig = plt.figure(figsize=(12,6))
+    plt.clf()
+    gs = gridspec.GridSpec(1,2)
+
+    for tt, idx in enumerate(idxs):
+        ax= plt.subplot(gs[tt])
+
+        ax.plot(d['wave'], d['spec'][idx], 'k', label=f'data: i={idx}')
+        #ax.plot(d['wave'], d['spec'][idx2], 'k', label='data2', ls='--')
+        ax.plot(d['wave'], tara_recon[idx], label='model')
+
+        # Break it down
+        for ss in range(d['M'].shape[0]):
+            ax.plot(d['wave'], d['M'][ss]*d['coeff'][idx][ss], label=r'$\xi_'+f'{ss+1}'+'$', ls=':')
+
+        ax.legend()
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_ylabel(r'$a_{\rm p} \; ({\rm m}^{-1})$')
+
+        plotting.set_fontsize(ax, 14)
+        # Grid
+        ax.grid(True)
+
+    # Finish
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
+def main(flg):
+    if flg== 'all':
+        flg= np.sum(np.array([2 ** ii for ii in range(25)]))
+    else:
+        flg= int(flg)
+
+    # PCA
+    if flg & (2**0):
+        fig_l23_tara_pca()
+
+    # MCMC fit
+    if flg & (2**1):
+        fig_mcmc_fit()
+
+    # MCMC fit
+    if flg & (2**2):
+        fig_corner()
+
+
+
 
 def main(flg):
     if flg== 'all':
@@ -735,10 +791,10 @@ def main(flg):
         fig_l23_pca_nmf_var()
 
     # L23: PCA and NMF basis functions
-    if flg & (2**2): # 4
-        fig_nmf_pca_basis()
-        #fig_nmf_pca_basis(Ncomp=3,
-        #                  outfile='fig_nmf_pca_basis_N3.png')
+    if flg & (2**2):
+        #fig_nmf_pca_basis()
+        fig_nmf_pca_basis(Ncomp=3,
+                          outfile='fig_nmf_pca_basis_N3.png')
 
     # L23: Fit NMF 1, 2
     if flg & (2**3):  # 8
@@ -760,9 +816,9 @@ def main(flg):
 
     # Fit nmr
     if flg & (2**6): # 64
-        fig_fit_nmf(icdom=0, ichl=1, cdom_max=500.)
-        #fig_fit_nmf(icdom=0, ichl=1, cdom_max=500.,
-        #            N_NMF=3, outfile='fig_l23_fit_nmf_N3.png')
+        #fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.)
+        fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.,
+                    N_NMF=3, outfile='fig_l23_fit_nmf_N3.png')
         #fig_fit_nmf(nmf_fit='Tara', cdom_max=530.,
         #            icdom=0, ichl=1)
 
@@ -774,21 +830,12 @@ def main(flg):
 
     # Individual
     if flg & (2**12):
-        fig_nmf_indiv()
-        fig_nmf_indiv(outfile='fig_nmf_indiv_N5.png',
-            N_NMF=5)
+        #fig_nmf_indiv([100, 20000])
+        fig_nmf_indiv([100, 2000], nmf_fit='L23')
 
     # Coeff
     if flg & (2**14):
         fig_l23_a_corner()
-
-    # Fit CDOM
-    if flg & (2**15):
-        fig_fit_cdom()
-
-    # Explained variance
-    if flg & (2**35):
-        fig_explain_variance()
 
     # NMF RMSE
     if flg & (2**10):
@@ -822,7 +869,7 @@ if __name__ == '__main__':
         #flg += 2 ** 4  # 16 -- Fit CDOM
         #flg += 2 ** 5  # 32 -- Explained variance
         
-        flg += 2 ** 14  # 32 -- Explained variance
+        flg += 2 ** 12  # Indiv
     else:
         flg = sys.argv[1]
 
