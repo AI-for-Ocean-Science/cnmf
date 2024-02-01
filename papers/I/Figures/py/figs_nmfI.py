@@ -140,6 +140,10 @@ def fig_examples(outfile='fig_examples.png',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+    # Count em
+    print(f" We have {d_l23['spec'].shape[0]} spectra for L23")
+    print(f" We have {d_tara['spec'].shape[0]} spectra for Tara")
+
 
 # #############################################
 def fig_l23_pca_nmf_var(
@@ -187,7 +191,7 @@ def fig_l23_pca_nmf_var(
             label='NMF')
 
     ax.set_xlabel(r'Number of Components ($m$)')
-    ax.set_ylabel('Cumulative Unexplained Variance')
+    ax.set_ylabel('Unexplained Variance')
     # Horizontal line at 1
     ax.axhline(1., color='k', ls=':')
 
@@ -417,7 +421,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
             label=r'Exponential ($S='+f'{exp_tot_coeff[1]:0.3f}'+r'$)', 
             ls='--', lw=2)
     ax_cdom.plot(cut_wv, a_cdom_pow_fit, 
-            color='r', label='Power Law '+r'($\alpha='+f'{pow_coeff[1]:0.1f}'+r'$)', 
+            color='r', label='Power Law '+r'($\beta='+f'{pow_coeff[1]:0.1f}'+r'$)', 
             ls=':', lw=2)
 
     ax_cdom.axvline(cdom_max, ls='--', color='gray')
@@ -735,9 +739,9 @@ def main(flg):
 
     # Fit nmr
     if flg & (2**6): # 64
-        #fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.)
-        fig_fit_nmf(icdom=0, ichl=1, cdom_max=530.,
-                    N_NMF=3, outfile='fig_l23_fit_nmf_N3.png')
+        fig_fit_nmf(icdom=0, ichl=1, cdom_max=500.)
+        #fig_fit_nmf(icdom=0, ichl=1, cdom_max=500.,
+        #            N_NMF=3, outfile='fig_l23_fit_nmf_N3.png')
         #fig_fit_nmf(nmf_fit='Tara', cdom_max=530.,
         #            icdom=0, ichl=1)
 
