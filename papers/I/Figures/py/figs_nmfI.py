@@ -105,7 +105,7 @@ def fig_examples(outfile='fig_examples.png',
         else:
             nrm = 1.
         ax_spec.plot(d_tara['wave'], d_tara['spec'][it_0]/nrm, 
-                 label=r'Tara: $a_{440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
+                 label=r'Tara: $a_{\rm p, 440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
                  color='orange', ls=ls)
     # L23 spectra
     for ss, a440 in enumerate([2e-2, 2e-1]):
@@ -119,12 +119,12 @@ def fig_examples(outfile='fig_examples.png',
             nrm = 1.
         # Plot
         ax_spec.plot(d_l23['wave'], d_l23['spec'][il_0]/nrm, 
-                 label=r'L23: $a_{440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
+                 label=r'L23: $a_{\rm nw,440} = 10^{'+f'{np.log10(a440):0.1f}'+r'} \, {\rm m}^{-1}$', 
                  color='blue', ls=ls)
     # Label
     ax_spec.set_xlabel('Wavelength (nm)')
     if norm:
-        ax_spec.set_ylabel(r'$a_{\rm nw}(\lambda$) Normalized at 440nm')
+        ax_spec.set_ylabel(r'Normalized $a_{\rm nw}$ [L23] or $a_{\rm p}$ [Tara]')
     else:
         ax_spec.set_ylabel(r'Absorption Coefficient (m$^{-1}$)')
     #ax_spec.set_yscale('log')
@@ -133,7 +133,7 @@ def fig_examples(outfile='fig_examples.png',
 
     # Axes
     for ax in [ax_440, ax_675, ax_spec]:
-        plotting.set_fontsize(ax, 12.)
+        plotting.set_fontsize(ax, 10.)
 
     # Finish
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
@@ -196,6 +196,9 @@ def fig_l23_pca_nmf_var(
     ax.set_ylim(1e-5, 0.01)
     ax.set_yscale('log')
     ax.legend(fontsize=15)
+
+    # Grid
+    ax.grid(True)
 
     lbl = 'L23' if nmf_fit == 'L23' else 'Tara'
     ax.text(0.05, 0.90, lbl, color='k',
@@ -359,13 +362,25 @@ def fig_nmf_basis(outroot:str='fig_nmf_basis',
     print(f"Saved: {outfile}")
 
 def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
-                 icdom:int=1, # 0-indexing
-                 ichl:int=0, # 0-indexing
+                 icdom:int=0, # 0-indexing
+                 ichl:int=1, # 0-indexing
                  outfile:str=None,
                  chl_min:float=450.,
-                 cdom_max:float=600.,
+                 cdom_max:float=530.,
                  add_gaussians:bool=False):
+    """
+    Generate a figure showing the fits of CDOM and chlorophyll using NMF.
 
+    Args:
+        nmf_fit (str): The type of NMF fit to use. Default is 'L23'.
+        N_NMF (int): The number of NMF components. Default is 4.
+        icdom (int): The index of the CDOM component to plot. Default is 1.
+        ichl (int): The index of the chlorophyll component to plot. Default is 0.
+        outfile (str): The output file name for the figure. If not provided, a default name will be used based on the nmf_fit parameter. Default is None.
+        chl_min (float, optional): The minimum wavelength for the chlorophyll fit. Default is 450.0.
+        cdom_max (float, optional): The maximum wavelength for the CDOM fit. Default is 600.0.
+        add_gaussians (bool, optional): Whether to add additional Gaussian fits to the chlorophyll fit. Default is False.
+    """
     if outfile is None:
         if nmf_fit == 'L23':
             outfile='fig_l23_fit_nmf.png'
@@ -499,6 +514,8 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
         ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel('NMF Basis')
         ax.legend(fontsize=15.)
+        # Grid
+        ax.grid(True)
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -601,6 +618,8 @@ def fig_l23_vs_tara_M(
         ax.legend(fontsize=13.)
 
         plotting.set_fontsize(ax, 13)
+        # Grid
+        ax.grid(True)
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -719,9 +738,11 @@ def main(flg):
 
     # L23: Fit NMF 1, 2
     if flg & (2**3):  # 8
-        #fig_fit_nmf(add_gaussians=True)
-        fig_fit_nmf(outfile='fig_W3_l23_fit.png',
-                    icdom=2, cdom_max=550.)
+        fig_fit_nmf()
+        fig_fit_nmf(nmf_fit='Tara')
+        #fig_fit_nmf(outfile='fig_W3_l23_fit.png',
+        #            icdom=2, cdom_max=550.)
+        #fig_fit_nmf(nmf_fit='Tara', cdom_max=530.)
 
     # Coefficient distributions for L23 NMF
     if flg & (2**4): # 16
