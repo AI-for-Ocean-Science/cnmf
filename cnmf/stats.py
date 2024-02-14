@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from IPython import embed
+
 
 def evar_computation(X:np.ndarray, W:np.ndarray, H:np.ndarray):
     """ Compute the explained variance of a model
