@@ -695,8 +695,7 @@ def fig_l23_tara_a_contours(
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_l23_a_corner(
-    outfile:str='fig_l23_a_corner.png',
+def fig_a_corner(outfile:str='fig_l23_a_corner.png',
     nmf_fit:str='L23'):
 
     # Load
@@ -715,40 +714,59 @@ def fig_l23_a_corner(
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4):
+def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4,
+                  seed=1234):
 
+    # Init seed
+    np.random.seed(seed)
+    
     # Load
     d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
 
     # Reconstruction
-    tara_recon = np.dot(d['coeff'], d['M'])
+    recon = np.dot(d['coeff'], d['M'])
 
-
-    # Outfile
-    outfile = f'fig_nmf_{nmf_fit}_i{idxs[0]}_{idxs[1]}.png'
 
     fig = plt.figure(figsize=(12,6))
     plt.clf()
-    gs = gridspec.GridSpec(1,2)
+    if isinstance(idxs, int):
+        outfile = f'fig_nmf_{nmf_fit}_{idxs}.png'
+        idxs = np.random.choice(np.arange(d['spec'].shape[0]), idxs)
+        gs = gridspec.GridSpec(3,4)
+    elif isinstance(idxs, list):
+        # Choose random ones
+        gs = gridspec.GridSpec(1,2)
+        # Outfile
+        outfile = f'fig_nmf_{nmf_fit}_i{idxs[0]}_{idxs[1]}.png'
+    else:
+        raise ValueError("idxs must be an int or list")
 
     for tt, idx in enumerate(idxs):
         ax= plt.subplot(gs[tt])
 
         ax.plot(d['wave'], d['spec'][idx], 'k', label=f'data: i={idx}')
         #ax.plot(d['wave'], d['spec'][idx2], 'k', label='data2', ls='--')
-        ax.plot(d['wave'], tara_recon[idx], label='model')
+        lbl = 'model' if tt == 0 else None
+        ax.plot(d['wave'], recon[idx], label=lbl)
 
         # Break it down
         for ss in range(d['M'].shape[0]):
-            ax.plot(d['wave'], d['M'][ss]*d['coeff'][idx][ss], label=r'$\xi_'+f'{ss+1}'+'$', ls=':')
+            ax.plot(d['wave'], d['M'][ss]*d['coeff'][idx][ss], 
+                    label=r'$\xi_'+f'{ss+1}: {d["coeff"][idx][ss]:0.2}'+'$', ls=':')
 
-        ax.legend()
-        ax.set_xlabel('Wavelength (nm)')
-        ax.set_ylabel(r'$a_{\rm p} \; ({\rm m}^{-1})$')
+        if nmf_fit == 'Tara':
+            ax.set_ylabel(r'$a_{\rm nw}$ (m$^{-1}$)')
+        else:
+            ax.set_ylabel(r'$a_{\rm p} \; ({\rm m}^{-1})$')
 
-        plotting.set_fontsize(ax, 14)
+        plotting.set_fontsize(ax, 12)
         # Grid
         ax.grid(True)
+        if tt>0:
+            ax.tick_params(labelbottom=False)  # Hide x-axis labels
+        else:
+            ax.set_xlabel('Wavelength (nm)')
+        ax.legend(fontsize=8)
 
     # Finish
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
@@ -833,6 +851,10 @@ def main(flg):
         #fig_nmf_indiv([100, 20000])
         fig_nmf_indiv([100, 2000], nmf_fit='L23')
 
+    # Individual for Tara
+    if flg & (2**13):
+        fig_nmf_indiv(12, nmf_fit='Tara')
+
     # Coeff
     if flg & (2**14):
         fig_l23_a_corner()
@@ -869,7 +891,8 @@ if __name__ == '__main__':
         #flg += 2 ** 4  # 16 -- Fit CDOM
         #flg += 2 ** 5  # 32 -- Explained variance
         
-        flg += 2 ** 12  # Indiv
+        #flg += 2 ** 12  # L23 Indiv
+        flg += 2 ** 13  # L23 Indiv
     else:
         flg = sys.argv[1]
 
