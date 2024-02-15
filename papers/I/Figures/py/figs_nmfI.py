@@ -705,9 +705,16 @@ def fig_l23_a_corner(
     coeff = d['coeff']
     wave = d['wave']
 
+    # Set minimums for presentation
+    coeff[:,0] = np.maximum(coeff[:,0], 1e-3)
+    coeff[:,1] = np.maximum(coeff[:,1], 1e-3)
+    coeff[:,2] = np.maximum(coeff[:,2], 1e-3)
+    coeff[:,3] = np.maximum(coeff[:,3], 1e-3)
+
     fig = corner.corner(
-        coeff[:,:4], labels=['a0', 'a1', 'a2', 'a3'],
+        coeff[:,:4], labels=['H1', 'H2', 'H3', 'H4'],
         label_kwargs={'fontsize':17},
+        axes_scale='log',
         show_titles=True,
         title_kwargs={"fontsize": 12},
         )
@@ -732,21 +739,32 @@ def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4):
     gs = gridspec.GridSpec(1,2)
 
     for tt, idx in enumerate(idxs):
+        print(f'id: {idx}')
         ax= plt.subplot(gs[tt])
 
         ax.plot(d['wave'], d['spec'][idx], 'k', label=f'data: i={idx}')
         #ax.plot(d['wave'], d['spec'][idx2], 'k', label='data2', ls='--')
         ax.plot(d['wave'], tara_recon[idx], label='model')
 
+        # Stats
+        dev = tara_recon[idx] - d['spec'][idx]
+        rel_dev = np.abs(dev) / d['spec'][idx]
+        max_dev = np.max(np.abs(dev))
+        irel = np.argmax(rel_dev)
+
+        print(f'max_dev: {max_dev}')
+        print(f'max_reldev: {rel_dev.max()} at {d["wave"][irel]}')
+
         # Break it down
         for ss in range(d['M'].shape[0]):
-            ax.plot(d['wave'], d['M'][ss]*d['coeff'][idx][ss], label=r'$\xi_'+f'{ss+1}'+'$', ls=':')
+            ax.plot(d['wave'], d['M'][ss]*d['coeff'][idx][ss], 
+                    label=r'$\xi_'+f'{ss+1}: {d["coeff"][idx][ss]:0.2f}'+'$', ls=':')
 
-        ax.legend()
+        ax.legend(fontsize=15.)
         ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel(r'$a_{\rm p} \; ({\rm m}^{-1})$')
 
-        plotting.set_fontsize(ax, 14)
+        plotting.set_fontsize(ax, 20)
         # Grid
         ax.grid(True)
 
@@ -754,26 +772,6 @@ def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4):
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
-
-def main(flg):
-    if flg== 'all':
-        flg= np.sum(np.array([2 ** ii for ii in range(25)]))
-    else:
-        flg= int(flg)
-
-    # PCA
-    if flg & (2**0):
-        fig_l23_tara_pca()
-
-    # MCMC fit
-    if flg & (2**1):
-        fig_mcmc_fit()
-
-    # MCMC fit
-    if flg & (2**2):
-        fig_corner()
-
-
 
 
 def main(flg):
@@ -867,9 +865,10 @@ if __name__ == '__main__':
         #flg += 2 ** 2  # 4 -- Indiv
         #flg += 2 ** 3  # 8 -- Coeff
         #flg += 2 ** 4  # 16 -- Fit CDOM
-        #flg += 2 ** 5  # 32 -- Explained variance
+        #flg += 2 ** 5  # 32 -- 
         
-        flg += 2 ** 12  # Indiv
+        #flg += 2 ** 12  # First to two L23 spectra 
+        flg += 2 ** 14  # First to two L23 spectra 
     else:
         flg = sys.argv[1]
 
