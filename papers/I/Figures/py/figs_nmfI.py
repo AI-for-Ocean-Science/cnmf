@@ -695,8 +695,9 @@ def fig_l23_tara_a_contours(
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_a_corner(outfile:str='fig_l23_a_corner.png',
-    nmf_fit:str='L23'):
+def fig_a_corner(nmf_fit:str='L23'):
+
+    outfile=f'fig_{nmf_fit}_a_corner.png'
 
     # Load
     d = cnmf_io.load_nmf(nmf_fit, 4, 'a')
@@ -862,7 +863,8 @@ def main(flg):
 
     # Coeff
     if flg & (2**14):
-        fig_l23_a_corner()
+        #fig_a_corner()
+        fig_a_corner(nmf_fit='Tara')
 
     # NMF RMSE
     if flg & (2**10):
@@ -897,7 +899,8 @@ if __name__ == '__main__':
         #flg += 2 ** 5  # 32 -- 
         
         #flg += 2 ** 12  # L23 Indiv
-        flg += 2 ** 13  # L23 Indiv
+        #flg += 2 ** 13  # Tara Indiv
+        flg += 2 ** 14  # Corner
     else:
         flg = sys.argv[1]
 
