@@ -8,6 +8,8 @@ import sklearn
 
 from ihop.iops import pca as ihop_pca
 
+from oceancolor.hydrolight import loisel23 
+
 from cnmf.oceanography import iops
 from cnmf import nmf_imaging
 from cnmf import io as cnmf_io
@@ -24,7 +26,8 @@ pca_path = os.path.join(resources.files('cnmf'),
 
 def loisel23_components(iop:str, N_NMF:int=10, 
     min_wv:float=min_wv, high_cut:float=high_cut,
-    clobber:bool=False, normalize:bool=True):
+    clobber:bool=False, normalize:bool=True,
+    X:int=4, Y:int=0):
     """
     Perform NMF analysis on Loisel23 data.
 
@@ -42,10 +45,19 @@ def loisel23_components(iop:str, N_NMF:int=10,
     # Root
     outroot = outfile.replace('.npz','')
 
-    # Load
-    spec_nw, mask, err, wave, Rs = iops.prep_loisel23(
-        iop, min_wv=min_wv, remove_water=True,
-        high_cut=high_cut)
+    # Load up the data
+    l23_ds = loisel23.load_ds(X, Y)
+
+    # Wavelengths, restricted to > 400 nm
+    cut = (l23_ds.Lambda > min_wv) & (l23_ds.Lambda < high_cut)
+    l23_a = l23_ds.a.data[:,cut]
+    wave = l23_ds.Lambda.data[cut]
+
+    Rs = l23_ds.Rrs.data[:,cut]
+
+    # Prep
+    spec_nw, mask, err = iops.prep(
+        l23_a, wave, remove_water=True)
 
     # Do it
     comps = nmf_imaging.NMFcomponents(
@@ -209,7 +221,7 @@ if __name__ == '__main__':
     ihop_pca.generate_l23_pca(clobber=True, Ncomp=3, X=4, Y=0,
                               min_wv=min_wv, high_cut=high_cut,
                               pca_path=pca_path, outroot=outroot)
-    '''
+
     # L23 PCA on Tara
     l23_on_tara(decomp='PCA')
 
@@ -228,4 +240,6 @@ if __name__ == '__main__':
         # 3: Explained variance: 0.9975242528085961
         # 4: Explained variance: 0.9990660778255239
     #tara_components('a', N_NMF=10)
+    '''
 
+    # CNMF on L23 test

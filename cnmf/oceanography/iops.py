@@ -41,7 +41,7 @@ def prep(spec:np.ndarray, wave:np.ndarray=None,
         new_spec = new_spec - np.outer(np.ones(nspec), a_w)
 
     # Reshape
-    new_spec = np.reshape(new_spec, (new_spec.shape[0], 
+    new_spec = np.reshape(new_spec, (new_spec.shape[0],
                      new_spec.shape[1], 1))
 
     # Build mask and error
@@ -99,7 +99,7 @@ def tara_matched_to_l23(low_cut:float=405., high_cut:float=705.,
     # Add in water
     if include_water:
         print("Adding in water..")
-        df_water = water.load_rsr_gsfc()
+        df_water = water.absorption.load_rsr_gsfc()
         a_w, _ =  spec_utils.rebin(df_water.wavelength.values, 
                             df_water.aw.values, np.zeros_like(df_water.aw),
                             wv_grid)

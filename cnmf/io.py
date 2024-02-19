@@ -29,7 +29,7 @@ def save_nmf(outfile:str, M:np.ndarray, coeff:np.ndarray, spec:np.ndarray,
         mask (np.ndarray): The binary mask matrix.
         err (np.ndarray): The error matrix.
         wave (np.ndarray): The wavelength array.
-        Rs (np.ndarray): The spatial correlation matrix.
+        Rs (np.ndarray): The remote sensing reflectance array.
         UID (np.ndarray, optional): The unique ID array. Defaults to None.
     """
     # Create output directory?
