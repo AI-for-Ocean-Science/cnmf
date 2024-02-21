@@ -365,7 +365,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
                  icdom:int=0, # 0-indexing
                  ichl:int=1, # 0-indexing
                  outfile:str=None,
-                 chl_min:float=450.,
+                 chl_min:float=430.,
                  cdom_max:float=530.,
                  add_gaussians:bool=False):
     """
@@ -440,10 +440,18 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
 
 
     # #########################
-    # Fit the chlorophyll
+    # Fit the chlorophyll basis functions
     ax_chl = plt.subplot(gs[ichl])
 
-    a_chl = M[ichl]
+    # Gererate the profile
+    if nmf_fit == 'L23':
+        #a_chl = np.sum(M[1:], axis=0)
+        dlbl = r'L23: $W_2 + W_4$'
+        a_chl = M[1] + M[3]
+    else:
+        a_chl = M[ichl]
+        dlbl=f'{nmf_fit}: '+r'$W_'+f'{ichl+1}'+'$'
+
     chla = pigments.a_chl(wave, ctype='a')
     chlb = pigments.a_chl(wave, ctype='b')
     chlc = pigments.a_chl(wave, ctype='c12')
@@ -452,7 +460,7 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
     G584 = pigments.a_chl(wave, source='chase', pigment='G584')
 
     gd1 = (wave > chl_min) & (wave < 550.)
-    gd2 = (wave > 589.) & (wave < 700.)
+    gd2 = (wave > 640.) & (wave < 700.)
     gd_wave2 = gd1 | gd2
     if add_gaussians:
         gd3 = (wave > 560.) & (wave < 620.)
@@ -489,8 +497,9 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
     # #########################
     # Plot
     ax_chl.plot(wave, a_chl, color='k', 
-                label=f'{nmf_fit}: '+r'$W_'+f'{ichl+1}'+'$')
-    ax_chl.plot(wave[gd_wave2], new_model[gd_wave2], 'ro', label='model')
+                label=dlbl)
+    ax_chl.plot(wave[gd_wave2], new_model[gd_wave2], 'ro', 
+                label='model')
     #https://www.allmovie.com/artist/akira-kurosawa-vn6780882/filmography
 
     # Chl
@@ -711,8 +720,13 @@ def fig_a_corner(nmf_fit:str='L23'):
     coeff[:,2] = np.maximum(coeff[:,2], 1e-3)
     coeff[:,3] = np.maximum(coeff[:,3], 1e-3)
 
+    # Labels
+    lbls = []
+    for ss in range(4):
+        lbls.append(r'$H_'+f'{ss+1}'+r'^{'+f'{nmf_fit}'+'}$')
+
     fig = corner.corner(
-        coeff[:,:4], labels=['H1', 'H2', 'H3', 'H4'],
+        coeff[:,:4], labels=lbls,
         label_kwargs={'fontsize':17},
         axes_scale='log',
         show_titles=True,
@@ -823,7 +837,7 @@ def main(flg):
     # L23: Fit NMF 1, 2
     if flg & (2**3):  # 8
         fig_fit_nmf()
-        fig_fit_nmf(nmf_fit='Tara')
+        #fig_fit_nmf(nmf_fit='Tara')
         #fig_fit_nmf(outfile='fig_W3_l23_fit.png',
         #            icdom=2, cdom_max=550.)
         #fig_fit_nmf(nmf_fit='Tara', cdom_max=530.)
@@ -863,8 +877,8 @@ def main(flg):
 
     # Coeff
     if flg & (2**14):
-        #fig_a_corner()
-        fig_a_corner(nmf_fit='Tara')
+        fig_a_corner()
+        #fig_a_corner(nmf_fit='Tara')
 
     # NMF RMSE
     if flg & (2**10):
@@ -900,7 +914,7 @@ if __name__ == '__main__':
         
         #flg += 2 ** 12  # L23 Indiv
         #flg += 2 ** 13  # Tara Indiv
-        flg += 2 ** 14  # Corner
+        #flg += 2 ** 14  # Corner
     else:
         flg = sys.argv[1]
 
