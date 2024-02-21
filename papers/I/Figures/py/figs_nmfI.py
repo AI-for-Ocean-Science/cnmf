@@ -20,6 +20,8 @@ import corner
 from oceancolor.utils import plotting 
 from oceancolor.iop import cdom
 from oceancolor.ph import pigments
+from oceancolor.hydrolight import loisel23
+
 
 from ihop.iops import pca as ihop_pca
 
@@ -728,10 +730,36 @@ def fig_a_corner(nmf_fit:str='L23'):
     fig = corner.corner(
         coeff[:,:4], labels=lbls,
         label_kwargs={'fontsize':17},
+        color='blue',
         axes_scale='log',
         show_titles=True,
         title_kwargs={"fontsize": 12},
         )
+
+    # Reset some things
+    for ax in fig.get_axes():
+        # Title
+        if len(ax.get_title()) > 0:
+            tit = ax.get_title()
+            # Find the second $ sign
+            #ipos = tit[1:].find('$')
+            #ax.set_title(tit[:ipos+2])
+            if nmf_fit == 'L23':
+                ax.set_title(tit[:21]+'$')
+            else:
+                ax.set_title(tit[:22]+'$')
+            #embed(header='745 ')
+            # Scrub the title
+            #ax.set_title('')
+        else: # Add a 1:1 line
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            if xlim[0] != 0.:
+                xvals = np.linspace(xlim[0], xlim[1], 1000)
+                yvals = xvals
+                ax.plot(xvals, yvals, 'k:')
+            
+
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
@@ -813,6 +841,47 @@ def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4,
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+def fig_H1_vs_adg(outfile:str='fig_H1_vs_adg.png',
+                 nmf_fit:str='L23', N_NMF:int=4):
+
+    # RMSE
+    rmss = []
+    # load
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
+    M = d['M']
+    wave = d['wave']
+    coeff = d['coeff']
+    L23_NMF_CDOM = coeff[:,0]
+
+    ds = loisel23.load_ds(4,0)
+    L23_wave = ds.Lambda.data
+    i400 = np.argmin(np.abs(L23_wave-405.))
+    L23_gd =  ds.ag[:,i400].data + ds.ad[:,i400].data
+
+
+    fig = plt.figure(figsize=(6,6))
+    plt.clf()
+    ax = plt.gca()
+
+    ax = sns.histplot(x=L23_NMF_CDOM, y=L23_gd, log_scale=True)
+    #
+    ax.set_xlabel(r'$H_1^{\rm L23}$')
+    ax.set_ylabel(r'$a_{\rm dg}^{\rm L23}(405\,{\rm nm})$')
+
+    # Add grid
+    ax.grid(True)
+
+    ax.legend()
+
+    #ax.set_yscale('log')
+    
+    # axes
+    plotting.set_fontsize(ax, 15)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
 
 def main(flg):
     if flg== 'all':
@@ -875,7 +944,7 @@ def main(flg):
     if flg & (2**13):
         fig_nmf_indiv(12, nmf_fit='Tara')
 
-    # Coeff
+    # Coeff as corner plot
     if flg & (2**14):
         fig_a_corner()
         #fig_a_corner(nmf_fit='Tara')
@@ -888,6 +957,11 @@ def main(flg):
     if flg & (2**27):
         fig_l23_tara_a_contours()
 
+
+    # Coeff as corner plot
+    if flg & (2**15):
+        fig_H1_vs_adg()
+        #fig_a_corner(nmf_fit='Tara')
 
 
 # Command line execution
@@ -915,6 +989,8 @@ if __name__ == '__main__':
         #flg += 2 ** 12  # L23 Indiv
         #flg += 2 ** 13  # Tara Indiv
         #flg += 2 ** 14  # Corner
+
+        flg += 2 ** 15  # L23 a_g + a_d
     else:
         flg = sys.argv[1]
 
