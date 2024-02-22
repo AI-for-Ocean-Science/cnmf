@@ -801,7 +801,7 @@ def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4,
         ax.plot(d['wave'], recon[idx], label=lbl)
 
         # Stats
-        dev = tara_recon[idx] - d['spec'][idx]
+        dev = recon[idx] - d['spec'][idx]
         rel_dev = np.abs(dev) / d['spec'][idx]
         max_dev = np.max(np.abs(dev))
         irel = np.argmax(rel_dev)
@@ -812,17 +812,17 @@ def fig_nmf_indiv(idxs:list, nmf_fit:str='Tara', N_NMF:int=4,
         # Break it down
         for ss in range(d['M'].shape[0]):
             ax.plot(d['wave'], d['M'][ss]*d['coeff'][idx][ss], 
-                    label=r'$\xi_'+f'{ss+1}: {d["coeff"][idx][ss]:0.2f}'+'$', ls=':')
+                    label=r'$H_'+f'{ss+1}: {d["coeff"][idx][ss]:0.2f}'+'$', ls=':')
 
         ax.set_xlabel('Wavelength (nm)')
 
 
         if nmf_fit == 'Tara':
-            ax.set_ylabel(r'$a_{\rm nw}$ (m$^{-1}$)')
+            ax.set_ylabel(r'$a_{\rm p} \; ({\rm m}^{-1})$')
             ax.legend(fontsize=8)
             plotting.set_fontsize(ax, 12)
         else:
-            ax.set_ylabel(r'$a_{\rm p} \; ({\rm m}^{-1})$')
+            ax.set_ylabel(r'$a_{\rm nw}$ (m$^{-1}$)')
             plotting.set_fontsize(ax, 20)
             ax.legend(fontsize=15.)
 
@@ -986,11 +986,11 @@ if __name__ == '__main__':
         #flg += 2 ** 4  # 16 -- Fit CDOM
         #flg += 2 ** 5  # 32 -- 
         
-        #flg += 2 ** 12  # L23 Indiv
+        flg += 2 ** 12  # L23 Indiv
         #flg += 2 ** 13  # Tara Indiv
         #flg += 2 ** 14  # Corner
 
-        flg += 2 ** 15  # L23 a_g + a_d
+        #flg += 2 ** 15  # L23 a_g + a_d
     else:
         flg = sys.argv[1]
 

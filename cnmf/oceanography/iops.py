@@ -11,16 +11,12 @@ from oceancolor import water
 
 from IPython import embed
 
-def prep(spec:np.ndarray, wave:np.ndarray=None, 
-    sigma:float=0.05, remove_water:bool=False):
+def prep(spec:np.ndarray, sigma:float=0.05):
     """ Prep IOP data for NMF analysis
 
     Args:
-        spec (np.ndarray): IOPs
-        wave (np.ndarray, optional): Wavelengths; required if 
-            remove_water is True. Defaults to None.
+        spec (np.ndarray): IOPs (nspec, nwave)
         sigma (float, optional): Error to use. Defaults to 0.05.
-        remove_water(bool, optional): Remove water??
 
     Returns:
         tuple: 
@@ -28,17 +24,9 @@ def prep(spec:np.ndarray, wave:np.ndarray=None,
             - **mask** (*np.ndarray*) -- Mask
             - **err** (*np.ndarray*) -- Error
     """
-    # Error check
-    if remove_water and (wave is None):
-        raise ValueError("wave must be provided if remove_water is True")
     # Prep
     new_spec = spec.copy()
     nspec, nwave = spec.shape
-
-    # Remove water?
-    if remove_water:
-        a_w = cross.a_water(wave, data='IOCCG')
-        new_spec = new_spec - np.outer(np.ones(nspec), a_w)
 
     # Reshape
     new_spec = np.reshape(new_spec, (new_spec.shape[0],
