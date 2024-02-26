@@ -745,12 +745,14 @@ def fig_a_corner(nmf_fit:str='L23'):
             #ipos = tit[1:].find('$')
             #ax.set_title(tit[:ipos+2])
             if nmf_fit == 'L23':
-                ax.set_title(tit[:21]+'$')
+                ax.set_title('Median '+tit[:21]+'$')
             else:
                 ax.set_title(tit[:22]+'$')
             #embed(header='745 ')
             # Scrub the title
             #ax.set_title('')
+            # Add a grid
+            ax.grid(True)
         else: # Add a 1:1 line
             xlim = ax.get_xlim()
             ylim = ax.get_ylim()
@@ -758,6 +760,7 @@ def fig_a_corner(nmf_fit:str='L23'):
                 xvals = np.linspace(xlim[0], xlim[1], 1000)
                 yvals = xvals
                 ax.plot(xvals, yvals, 'k:')
+                ax.grid(True)
             
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
@@ -882,6 +885,51 @@ def fig_H1_vs_adg(outfile:str='fig_H1_vs_adg.png',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+def fig_variance_mode(outfile:str='fig_variance_mode.png'): 
+
+    # Load PCAs
+    pca_N20 = ihop_pca.load('pca_L23_X4Y0_a_N20.npz',
+                                    pca_path=pca_path)
+
+    fig = plt.figure(figsize=(8,6))
+    gs = gridspec.GridSpec(1,1)
+    ax = plt.subplot(gs[0])
+
+    xs = np.arange(len(pca_N20['explained_variance'])) + 1
+    exponent = -2.
+    y0 = 2
+    ys = pca_N20['explained_variance'][y0] * (xs/xs[y0])**(exponent) 
+
+    # Plot
+    ax.plot(np.arange(pca_N20['explained_variance'].size)+1, 
+            pca_N20['explained_variance'], 'o')
+    #ax.plot(xs, d['explained_variance'], 'o', label='Explained Variance')
+    ax.plot(xs, ys, '--', color='g', label=f'Power law: {exponent}')
+    # Label
+    ax.set_ylabel('Variance explained per mode')
+    ax.set_xlabel('Number of PCA components')
+    #
+    #ax.set_xlim(0,10.)
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+
+    # Minor ticks
+    ax.minorticks_on()
+    # Horizontal line at 0
+    #ax.axhline(0., color='k', ls='--')
+
+    #loc = 'upper right' if ss == 1 else 'upper left'
+    ax.legend(fontsize=15)#, loc=loc)
+
+    # Turn on grid
+    ax.grid(True, which='both', ls='--', lw=0.5)
+
+    plotting.set_fontsize(ax, 18)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
 
 def main(flg):
     if flg== 'all':
@@ -963,6 +1011,9 @@ def main(flg):
         fig_H1_vs_adg()
         #fig_a_corner(nmf_fit='Tara')
 
+    # Variance per mode
+    if flg & (2**16):
+        fig_variance_mode()
 
 # Command line execution
 if __name__ == '__main__':
@@ -986,11 +1037,12 @@ if __name__ == '__main__':
         #flg += 2 ** 4  # 16 -- Fit CDOM
         #flg += 2 ** 5  # 32 -- 
         
-        flg += 2 ** 12  # L23 Indiv
+        #flg += 2 ** 12  # L23 Indiv
         #flg += 2 ** 13  # Tara Indiv
-        #flg += 2 ** 14  # Corner
+        #flg += 2 ** 14  # L23 H coefficients in a Corner plot
 
         #flg += 2 ** 15  # L23 a_g + a_d
+        flg += 2 ** 16  # Variance per mode (PCA)
     else:
         flg = sys.argv[1]
 
