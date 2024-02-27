@@ -1033,9 +1033,11 @@ def fig_variance_mode(outfile:str='fig_variance_mode.png'):
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_geo_tara(param:str, N_NMF:int=4): 
+def fig_geo_tara(param:str, N_NMF:int=4, cmap:str='jet',
+                 minval:float=-3, maxval:float=None): 
 
-    outfile=f'fig_geo_tara_{param}.png'
+    sparam = param.replace('/','_')
+    outfile=f'fig_geo_tara_{sparam}.png'
 
     print("Loading Tara..")
     tara_db = tara_io.load_pg_db(expedition='Microbiome')
@@ -1052,17 +1054,30 @@ def fig_geo_tara(param:str, N_NMF:int=4):
     # Metric
     if param in ['H1', 'H2', 'H3', 'H4']:
         metric = np.log10(tara_coeff[:,int(param[1])-1])
-        metric = np.maximum(metric, -3.)
+    elif param == 'H1/H2+H4':
+        metric = np.log10(tara_coeff[:,0]/(tara_coeff[:,1]+tara_coeff[:,3]))
+        minval, maxval = -1.,1.
+    elif '+' in param: 
+        metric = np.zeros(tara_coeff.shape[0])
+        for pp in param.split('+'):
+            metric += tara_coeff[:,int(pp[1])-1]
+    elif '/' in param: 
+        metric = np.log10(tara_coeff[:,int(param[1])-1]/tara_coeff[:,int(param[4])-1])
     else:
         raise ValueError(f'Bad param: {param}')
 
-    fig = plt.figure(figsize=(12,8))
+    if minval is not None:
+        metric = np.maximum(metric, minval)
+    if maxval is not None:
+        metric = np.minimum(metric, maxval)
+
+    fig = plt.figure(figsize=(7,8))
     plt.clf()
 
     ax = plt.subplot(projection=tformM)
 
     img = plt.scatter(x=lons,
-        y=lats, c=metric, cmap='jet',
+        y=lats, c=metric, cmap=cmap,
             #vmin=0.,
             #vmax=vmax, 
         s=1,
@@ -1077,8 +1092,11 @@ def fig_geo_tara(param:str, N_NMF:int=4):
     ax.coastlines(zorder=10)
     ax.add_feature(cartopy.feature.LAND, 
         facecolor='lightgray', edgecolor='black')
-    ax.set_global()
-    ax.legend(loc='lower left')
+    #ax.set_global()
+
+    lon_min, lon_max, lat_min, lat_max = -100, 30, -70, 50
+    ax.set_extent([lon_min, lon_max, lat_min, lat_max])
+
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -1176,6 +1194,10 @@ def main(flg):
     # Corner parameter + H
     if flg & (2**18):
         fig_geo_tara('H1')
+        fig_geo_tara('H3')
+        fig_geo_tara('H2+H4')
+        fig_geo_tara('H1/H2+H4')#, cmap='viridis')
+        fig_geo_tara('H2/H4', maxval=2., minval=-1.)
 
     # aph vs H2+H4
     if flg & (2**19):
@@ -1210,8 +1232,8 @@ if __name__ == '__main__':
         #flg += 2 ** 15  # L23 a_g + a_d
         #flg += 2 ** 16  # Variance per mode (PCA)
         #flg += 2 ** 17  # L23 H coefficients + ad/ag in a Corner plot
-        #flg += 2 ** 18  # Explore Tara geographic distribution
-        flg += 2 ** 19  # L23 aph vs H2+H4
+        flg += 2 ** 18  # Explore Tara geographic distribution
+        #flg += 2 ** 19  # L23 aph vs H2+H4
     else:
         flg = sys.argv[1]
 
