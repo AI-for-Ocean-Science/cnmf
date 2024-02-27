@@ -13,14 +13,19 @@ import pandas
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import cartopy.crs as ccrs
+import cartopy
 mpl.rcParams['font.family'] = 'stixgeneral'
 
 import corner
 
 from oceancolor.utils import plotting 
+from oceancolor.utils import cat_utils
 from oceancolor.iop import cdom
 from oceancolor.ph import pigments
 from oceancolor.hydrolight import loisel23
+from oceancolor.tara import io as tara_io
 
 
 from ihop.iops import pca as ihop_pca
@@ -32,6 +37,9 @@ from IPython import embed
 
 pca_path = os.path.join(resources.files('cnmf'),
                             'data', 'L23')
+
+tformM = ccrs.Mollweide()
+tformP = ccrs.PlateCarree()                        
 
 # #############################################
 def fig_examples(outfile='fig_examples.png',
@@ -937,6 +945,48 @@ def fig_H1_vs_adg(outfile:str='fig_H1_vs_adg.png',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+
+def fig_H24_vs_aph(outfile:str='fig_H24_vs_aph.png',
+                 nmf_fit:str='L23', N_NMF:int=4):
+
+    # RMSE
+    rmss = []
+    # load
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
+    M = d['M']
+    wave = d['wave']
+    coeff = d['coeff']
+    L23_H_ph = coeff[:,1] + coeff[:,3]
+
+    ds = loisel23.load_ds(4,0)
+    L23_wave = ds.Lambda.data
+    i440 = np.argmin(np.abs(L23_wave-440.))
+    L23_ph =  ds.aph[:,i440].data 
+
+
+    fig = plt.figure(figsize=(6,6))
+    plt.clf()
+    ax = plt.gca()
+
+    ax = sns.histplot(x=L23_H_ph, y=L23_ph, log_scale=True)
+    #
+    ax.set_xlabel(r'$H_2^{\rm L23} + H_4^{\rm L23}$')
+    ax.set_ylabel(r'$a_{\rm ph}^{\rm L23}(440\,{\rm nm})$')
+
+    ax.set_xlim(1e-2, None)
+
+    # Add grid
+    ax.grid(True)
+
+    #ax.set_yscale('log')
+    
+    # axes
+    plotting.set_fontsize(ax, 15)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
 def fig_variance_mode(outfile:str='fig_variance_mode.png'): 
 
     # Load PCAs
@@ -978,6 +1028,57 @@ def fig_variance_mode(outfile:str='fig_variance_mode.png'):
     ax.grid(True, which='both', ls='--', lw=0.5)
 
     plotting.set_fontsize(ax, 18)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
+def fig_geo_tara(param:str, N_NMF:int=4): 
+
+    outfile=f'fig_geo_tara_{param}.png'
+
+    print("Loading Tara..")
+    tara_db = tara_io.load_pg_db(expedition='Microbiome')
+
+    # Load Tara
+    d_tara = cnmf_io.load_nmf('Tara', N_NMF, 'a')
+    tara_coeff = d_tara['coeff']
+
+    # Grab lat, lon
+    midx = cat_utils.match_ids(d_tara['UID'], tara_db.uid.values)
+    lats = tara_db.lat.values[midx]
+    lons = tara_db.lon.values[midx]
+
+    # Metric
+    if param in ['H1', 'H2', 'H3', 'H4']:
+        metric = np.log10(tara_coeff[:,int(param[1])-1])
+        metric = np.maximum(metric, -3.)
+    else:
+        raise ValueError(f'Bad param: {param}')
+
+    fig = plt.figure(figsize=(12,8))
+    plt.clf()
+
+    ax = plt.subplot(projection=tformM)
+
+    img = plt.scatter(x=lons,
+        y=lats, c=metric, cmap='jet',
+            #vmin=0.,
+            #vmax=vmax, 
+        s=1,
+        transform=tformP, label=param)
+
+    # Color bar
+    cbaxes = plt.colorbar(img, pad=0., fraction=0.030, orientation='horizontal') #location='left')
+    cbaxes.set_label(param, fontsize=17.)
+    cbaxes.ax.tick_params(labelsize=15)
+
+    # Coast lines
+    ax.coastlines(zorder=10)
+    ax.add_feature(cartopy.feature.LAND, 
+        facecolor='lightgray', edgecolor='black')
+    ax.set_global()
+    ax.legend(loc='lower left')
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -1058,7 +1159,7 @@ def main(flg):
         fig_l23_tara_a_contours()
 
 
-    # Coeff as corner plot
+    # H1 vs adg
     if flg & (2**15):
         fig_H1_vs_adg()
         #fig_a_corner(nmf_fit='Tara')
@@ -1071,6 +1172,14 @@ def main(flg):
     if flg & (2**17):
         #fig_explore_corner('adag', 'L23')
         fig_explore_corner('chl', 'L23')
+
+    # Corner parameter + H
+    if flg & (2**18):
+        fig_geo_tara('H1')
+
+    # aph vs H2+H4
+    if flg & (2**19):
+        fig_H24_vs_aph()
 
 # Command line execution
 if __name__ == '__main__':
@@ -1100,7 +1209,9 @@ if __name__ == '__main__':
 
         #flg += 2 ** 15  # L23 a_g + a_d
         #flg += 2 ** 16  # Variance per mode (PCA)
-        flg += 2 ** 17  # L23 H coefficients + ad/ag in a Corner plot
+        #flg += 2 ** 17  # L23 H coefficients + ad/ag in a Corner plot
+        #flg += 2 ** 18  # Explore Tara geographic distribution
+        flg += 2 ** 19  # L23 aph vs H2+H4
     else:
         flg = sys.argv[1]
 
