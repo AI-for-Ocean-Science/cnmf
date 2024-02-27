@@ -706,12 +706,12 @@ def fig_l23_tara_a_contours(
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
-def fig_a_corner(nmf_fit:str='L23'):
+def fig_a_corner(dataset:str='L23'):
 
-    outfile=f'fig_{nmf_fit}_a_corner.png'
+    outfile=f'fig_{dataset}_a_corner.png'
 
     # Load
-    d = cnmf_io.load_nmf(nmf_fit, 4, 'a')
+    d = cnmf_io.load_nmf(dataset, 4, 'a')
     M = d['M']
     coeff = d['coeff']
     wave = d['wave']
@@ -762,6 +762,58 @@ def fig_a_corner(nmf_fit:str='L23'):
                 ax.plot(xvals, yvals, 'k:')
                 ax.grid(True)
             
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
+
+def fig_explore_corner(param:str, dataset:str):
+    #
+    X,Y = 4,0
+    ds = loisel23.load_ds(X, Y)
+
+    outfile=f'fig_explore_{param}_{dataset}.png'
+
+    # Load
+    d = cnmf_io.load_nmf(dataset, 4, 'a')
+    M = d['M']
+    coeff = d['coeff']
+    wave = d['wave']
+
+    # New param
+    if param == 'adag' and dataset == 'L23':
+        # Calculate 
+        L23_wave = ds.Lambda.data
+        i400 = np.argmin(np.abs(L23_wave-405.))
+        d_param =  ds.ad[:,i400].data / ds.ag[:,i400].data
+    elif param == 'chl' and dataset == 'L23':
+        d_param = loisel23.calc_Chl(ds)
+    else:
+        raise ValueError(f'Bad combination of {param} and {dataset}')
+
+    # Set minimums for presentation
+    coeff[:,0] = np.maximum(coeff[:,0], 1e-3)
+    coeff[:,1] = np.maximum(coeff[:,1], 1e-3)
+    coeff[:,2] = np.maximum(coeff[:,2], 1e-3)
+    coeff[:,3] = np.maximum(coeff[:,3], 1e-3)
+    # Kludge
+    coeff = np.append(coeff, d_param[:,None], axis=1)
+
+    # Labels
+    lbls = []
+    for ss in range(4):
+        lbls.append(r'$H_'+f'{ss+1}'+r'^{'+f'{dataset}'+'}$')
+    lbls.append(param)
+
+    fig = corner.corner(
+        coeff[:,:5], labels=lbls,
+        label_kwargs={'fontsize':17},
+        color='blue',
+        axes_scale='log',
+        show_titles=False,
+        title_kwargs={"fontsize": 12},
+        )
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -1015,6 +1067,11 @@ def main(flg):
     if flg & (2**16):
         fig_variance_mode()
 
+    # Corner parameter + H
+    if flg & (2**17):
+        #fig_explore_corner('adag', 'L23')
+        fig_explore_corner('chl', 'L23')
+
 # Command line execution
 if __name__ == '__main__':
     import sys
@@ -1042,7 +1099,8 @@ if __name__ == '__main__':
         #flg += 2 ** 14  # L23 H coefficients in a Corner plot
 
         #flg += 2 ** 15  # L23 a_g + a_d
-        flg += 2 ** 16  # Variance per mode (PCA)
+        #flg += 2 ** 16  # Variance per mode (PCA)
+        flg += 2 ** 17  # L23 H coefficients + ad/ag in a Corner plot
     else:
         flg = sys.argv[1]
 
