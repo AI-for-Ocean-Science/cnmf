@@ -1061,6 +1061,7 @@ def fig_geo_tara(param:str, N_NMF:int=4, cmap:str='jet',
         metric = np.zeros(tara_coeff.shape[0])
         for pp in param.split('+'):
             metric += tara_coeff[:,int(pp[1])-1]
+        metric = np.log10(metric)
     elif '/' in param: 
         metric = np.log10(tara_coeff[:,int(param[1])-1]/tara_coeff[:,int(param[4])-1])
     else:
@@ -1193,11 +1194,11 @@ def main(flg):
 
     # Corner parameter + H
     if flg & (2**18):
-        fig_geo_tara('H1')
-        fig_geo_tara('H3')
-        fig_geo_tara('H2+H4')
-        fig_geo_tara('H1/H2+H4')#, cmap='viridis')
-        fig_geo_tara('H2/H4', maxval=2., minval=-1.)
+        fig_geo_tara('H1', minval=-2.)
+        #fig_geo_tara('H3')
+        fig_geo_tara('H2+H4', minval=-2.)
+        #fig_geo_tara('H1/H2+H4')#, cmap='viridis')
+        #fig_geo_tara('H2/H4', maxval=2., minval=-1.)
 
     # aph vs H2+H4
     if flg & (2**19):
