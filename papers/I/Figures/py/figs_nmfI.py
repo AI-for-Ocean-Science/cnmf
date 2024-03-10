@@ -4,8 +4,8 @@ import os
 from importlib import resources
 
 import numpy as np
-from scipy import stats
 from scipy.interpolate import interp1d 
+from scipy.optimize import curve_fit
 
 import seaborn as sns
 import pandas
@@ -528,6 +528,213 @@ def fig_fit_nmf(nmf_fit:str='L23', N_NMF:int=4,
 
     # Finish
     for ax in [ax_cdom, ax_chl]:
+        plotting.set_fontsize(ax, 16)
+        # Label the axes
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_ylabel('NMF Basis')
+        ax.legend(fontsize=15.)
+        # Grid
+        ax.grid(True)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
+def fig_fit_W2(basis:str='W2', nmf_fit:str='L23', 
+                N_NMF:int=4,
+                outfile:str=None,
+                chl_min:float=430):
+
+    if outfile is None:
+        outfile=f'fig_fit_{basis}_{nmf_fit}.png'
+
+    # Load
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
+    M = d['M']
+    wave = d['wave']
+
+    # #########################
+    # Fit the chlorophyll basis functions
+    fig = plt.figure(figsize=(11,5))
+    gs = gridspec.GridSpec(1,1)
+    ax_chl = plt.subplot(gs[0])
+
+    # Gererate the profile
+    dlbl = f'{nmf_fit}: {basis}'
+    a_chl = M[int(basis[-1])-1]
+
+    chla = pigments.a_chl(wave, ctype='a')
+    chlb = pigments.a_chl(wave, ctype='b')
+    chlc = pigments.a_chl(wave, ctype='c12')
+    zea = pigments.a_chl(wave, pigment='Zea')
+    peri = pigments.a_chl(wave, pigment='Peri')
+    beta = pigments.a_chl(wave, pigment='beta-Car')
+    G584 = pigments.a_chl(wave, source='chase', pigment='G584')
+
+    gd1 = (wave > chl_min) & (wave < 550.)
+    gd2 = (wave > 640.) & (wave < 700.)
+    gd_wave2 = gd1 | gd2
+
+    #add_pigments=[peri[gd_wave2], beta[gd_wave2]]
+    add_pigments=[zea[gd_wave2]]
+
+    # Fit
+    sigma = np.ones_like(wave[gd_wave2])*0.05
+    ans, cov = pigments.fit_a_chl(
+        wave[gd_wave2], a_chl[gd_wave2], 
+        add_pigments=add_pigments,
+        fit_type='positive', sigma=sigma)
+    print(f'Chl fit: {ans}')
+
+    #all_pigments=[peri, beta]
+    all_pigments=[zea]
+    def mk_model(*pargs):
+        # pargs[0] is not used
+        # Chl
+        a = pargs[0]*chla + pargs[1]*chlb + pargs[2]*chlc
+        # Others?
+        if all_pigments is not None:
+            for i, pigment in enumerate(all_pigments):
+                a += pargs[3+i]*pigment
+        # Return
+        return a
+    #embed(header='fig_fit_nmf 457')
+    new_model = mk_model(*ans)
+    
+    # #########################
+    # Plot
+    ax_chl.plot(wave, a_chl, color='k', 
+                label=dlbl)
+    ax_chl.plot(wave[gd_wave2], new_model[gd_wave2], 'ro', 
+                label='model')
+    #https://www.allmovie.com/artist/akira-kurosawa-vn6780882/filmography
+
+    # Chl
+    for ss, pig, wv, lbl in zip(range(3), [chla,chlb,chlc], [673.,440.,440.], ['a', 'b', 'c12']):
+        #iwv = np.argmin(np.abs(wave-wv))
+        #nrm = pig[iwv]/M[0,iwv]
+        #print(f'nrm: {1/nrm}')
+        ax_chl.plot(wave, pig*ans[ss], label=f'Chl-{lbl}', ls=':')
+
+
+    # New ones
+    #ax_chl.plot(wave, peri*ans[3], color='purple', label='Peri', ls=':')
+    #ax_chl.plot(wave, beta*ans[4], color='orange', label=r'$\beta$-Car', ls=':')
+    ax_chl.plot(wave, zea*ans[3], color='orange', label=r'Zea')
+
+
+    # Finish
+    for ax in [ax_chl]:
+        plotting.set_fontsize(ax, 16)
+        # Label the axes
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_ylabel('NMF Basis')
+        ax.legend(fontsize=15.)
+        # Grid
+        ax.grid(True)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
+
+def fig_fit_W4(basis:str='W4', nmf_fit:str='L23', 
+                N_NMF:int=4, 
+                use_pigments=['FUCO', 'Diad'],
+                outfile:str=None,
+                chl_min:float=430):
+
+    if outfile is None:
+        outfile=f'fig_fit_{basis}_{nmf_fit}.png'
+
+    # Load
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, 'a')
+    M = d['M']
+    wave = d['wave']
+
+    # #########################
+    # Fit the chlorophyll basis functions
+    fig = plt.figure(figsize=(11,5))
+    gs = gridspec.GridSpec(1,1)
+    ax_chl = plt.subplot(gs[0])
+
+    # Gererate the profile
+    dlbl = f'{nmf_fit}: {basis}'
+    a_chl = M[int(basis[-1])-1]
+
+    #chla = pigments.a_chl(wave, ctype='a')
+    #chlb = pigments.a_chl(wave, ctype='b')
+    #chlc = pigments.a_chl(wave, ctype='c12')
+    #zea = pigments.a_chl(wave, pigment='Zea')
+    peri = pigments.a_chl(wave, pigment='Peri')
+    fuco = pigments.a_chl(wave, pigment='FUCO')
+    diad = pigments.a_chl(wave, pigment='Diad')
+    pdict = {'FUCO': fuco, 'Diad': diad, 'Peri': peri}
+    #beta = pigments.a_chl(wave, pigment='beta-Car')
+    #G584 = pigments.a_chl(wave, source='chase', pigment='G584')
+
+    gd1 = (wave > chl_min) & (wave < 550.)
+    #gd2 = (wave > 640.) & (wave < 700.)
+    gd_wave2 = gd1 #| gd2
+
+    add_pigments = []
+    for pig in use_pigments:
+        add_pigments += [pdict[pig][gd_wave2]]
+
+    # Fit
+
+    def func(*pargs):
+        a = np.zeros_like(add_pigments[0])
+        # Others?
+        for i, pigment in enumerate(add_pigments):
+            a += pargs[i+1]*pigment
+        # Return
+        return a
+    p0 = np.ones(len(add_pigments))
+    sigma = np.ones_like(wave[gd_wave2])*0.05
+    ans, cov =  curve_fit(func, wave[gd_wave2],
+                          a_chl[gd_wave2], 
+                          p0=p0, sigma=sigma)
+
+    #all_pigments=[peri, beta]
+    all_pigments = []
+    for pig in use_pigments:
+        all_pigments += [pdict[pig]]
+    def mk_model(*pargs, all_pigments=None):
+        # pargs[0] is not used
+        # Chl
+        #a = pargs[0]*chla + pargs[1]*chlb + pargs[2]*chlc
+        # Others?
+        a = np.zeros_like(all_pigments[0])
+        if all_pigments is not None:
+            for i, pigment in enumerate(all_pigments):
+                a += pargs[i]*pigment
+        # Return
+        return a
+    #embed(header='fig_fit_nmf 457')
+    new_model = mk_model(*ans, all_pigments=all_pigments)
+    
+    # #########################
+    # Plot
+    ax_chl.plot(wave, a_chl, color='k', 
+                label=dlbl)
+    ax_chl.plot(wave[gd_wave2], new_model[gd_wave2], 'ro', 
+                label='model')
+    #https://www.allmovie.com/artist/akira-kurosawa-vn6780882/filmography
+
+
+    # New ones
+    for ii, pig in enumerate(use_pigments):
+        ax_chl.plot(wave, pdict[pig]*ans[ii], label=pig, ls=':')
+    #ax_chl.plot(wave, peri*ans[0], color='purple', label='Peri', ls=':')
+    #ax_chl.plot(wave, fuco*ans[1], color='blue', label='Fuco', ls=':')
+    #ax_chl.plot(wave, diad*ans[2], color='green', label='Diad', ls=':')
+    #ax_chl.plot(wave, beta*ans[4], color='orange', label=r'$\beta$-Car', ls=':')
+    #ax_chl.plot(wave, zea*ans[0], color='orange', label=r'Zea')
+
+
+    # Finish
+    for ax in [ax_chl]:
         plotting.set_fontsize(ax, 16)
         # Label the axes
         ax.set_xlabel('Wavelength (nm)')
@@ -1203,6 +1410,16 @@ def main(flg):
     # aph vs H2+H4
     if flg & (2**19):
         fig_H24_vs_aph()
+    
+    # Fit W2 or W4
+    if flg & (2**20):
+        #fig_fit_W2(nmf_fit='L23', chl_min=460.)
+        fig_fit_W2(nmf_fit='Tara', chl_min=460.)
+
+    # Fit W2 or W4
+    if flg & (2**21):
+        #fig_fit_W4(nmf_fit='L23', chl_min=440.)
+        fig_fit_W4(nmf_fit='Tara', chl_min=440.)
 
 # Command line execution
 if __name__ == '__main__':
@@ -1233,8 +1450,10 @@ if __name__ == '__main__':
         #flg += 2 ** 15  # L23 a_g + a_d
         #flg += 2 ** 16  # Variance per mode (PCA)
         #flg += 2 ** 17  # L23 H coefficients + ad/ag in a Corner plot
-        flg += 2 ** 18  # Explore Tara geographic distribution
+        #flg += 2 ** 18  # Explore Tara geographic distribution
         #flg += 2 ** 19  # L23 aph vs H2+H4
+        flg += 2 ** 20  # Fit W2 
+        flg += 2 ** 21  # Fit W4 
     else:
         flg = sys.argv[1]
 
