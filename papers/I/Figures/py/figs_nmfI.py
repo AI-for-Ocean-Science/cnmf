@@ -1310,6 +1310,56 @@ def fig_geo_tara(param:str, N_NMF:int=4, cmap:str='jet',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+def fig_tara_chl_W(N_NMF:int=4): 
+
+    outfile='fig_tara_chl_W.png'
+
+    print("Loading Tara..")
+    tara_db = tara_io.load_pg_db(expedition='Microbiome')
+
+    # Load Tara
+    d_tara = cnmf_io.load_nmf('Tara', N_NMF, 'a')
+    tara_coeff = d_tara['coeff']
+
+    #tara_chl = tara_coeff[:,1] + tara_coeff[:,3]
+    NMF_chl = tara_coeff[:,1] 
+
+    # Grab lat, lon
+    midx = cat_utils.match_ids(d_tara['UID'], tara_db.uid.values)
+    Tara_chlA = tara_db.Chl_lineheight.values[midx]
+
+    figsize=(6,6)
+    fig = plt.figure(figsize=figsize)
+    plt.clf()
+    gs = gridspec.GridSpec(1,1)
+
+    ax= plt.subplot(gs[0])
+
+    keep = (Tara_chlA > 0.01) & (NMF_chl > 0.01)
+
+    _ = sns.histplot(x=NMF_chl[keep], 
+                     y=Tara_chlA[keep], ax=ax,
+                     bins=50,
+                     log_scale=True)
+
+    jg = sns.jointplot(x=tara_chl[keep], 
+                     y=chlA[keep], 
+                kind='hex', bins='log', # gridsize=250, #xscale='log',
+                xscale='log', yscale='log',
+                # mincnt=1,
+                cmap='Greens',
+                marginal_kws=dict(fill=False, color='black', 
+                                    bins=100)) 
+
+    # Labels
+    jg.ax_joint.set_xlabel('NMF Chl')
+    jg.ax_joint.set_ylabel('Tara Chl')
+    plotting.set_fontsize(jg.ax_joint, 14)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
 def main(flg):
     if flg== 'all':
         flg= np.sum(np.array([2 ** ii for ii in range(25)]))
@@ -1421,6 +1471,10 @@ def main(flg):
         #fig_fit_W4(nmf_fit='L23', chl_min=440.)
         fig_fit_W4(nmf_fit='Tara', chl_min=440.)
 
+    # Tara Chl
+    if flg & (2**22):
+        fig_tara_chl_W()
+
 # Command line execution
 if __name__ == '__main__':
     import sys
@@ -1452,8 +1506,10 @@ if __name__ == '__main__':
         #flg += 2 ** 17  # L23 H coefficients + ad/ag in a Corner plot
         #flg += 2 ** 18  # Explore Tara geographic distribution
         #flg += 2 ** 19  # L23 aph vs H2+H4
-        flg += 2 ** 20  # Fit W2 
-        flg += 2 ** 21  # Fit W4 
+        #flg += 2 ** 20  # Fit W2 
+        #flg += 2 ** 21  # Fit W4 
+
+        flg += 2 ** 22  # Tara Chl-a
     else:
         flg = sys.argv[1]
 
