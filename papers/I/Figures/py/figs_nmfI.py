@@ -940,7 +940,7 @@ def fig_a_corner(dataset:str='L23'):
     # Labels
     lbls = []
     for ss in range(4):
-        lbls.append(r'$H_'+f'{ss+1}'+r'^{'+f'{nmf_fit}'+'}$')
+        lbls.append(r'$H_'+f'{ss+1}'+r'^{'+f'{dataset}'+'}$')
 
     fig = corner.corner(
         coeff[:,:4], labels=lbls,
@@ -959,7 +959,7 @@ def fig_a_corner(dataset:str='L23'):
             # Find the second $ sign
             #ipos = tit[1:].find('$')
             #ax.set_title(tit[:ipos+2])
-            if nmf_fit == 'L23':
+            if dataset == 'L23':
                 ax.set_title('Median '+tit[:21]+'$')
             else:
                 ax.set_title(tit[:22]+'$')
@@ -1310,6 +1310,25 @@ def fig_geo_tara(param:str, N_NMF:int=4, cmap:str='jet',
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+
+def fig_tara_chl_vs_W2(N_NMF:int=4): 
+                 
+
+    outfile='fig_tara_chl_vs_W2.png'
+
+    print("Loading Tara..")
+    tara_db = tara_io.load_pg_db(expedition='Microbiome')
+
+    # Load Tara
+    d_tara = cnmf_io.load_nmf('Tara', N_NMF, 'a')
+    tara_coeff = d_tara['coeff']
+
+    # Match
+    embed(header='1330 of figs')
+    midx = cat_utils.match_ids(d_tara['UID'], tara_db.uid.values)
+
+
+
 def main(flg):
     if flg== 'all':
         flg= np.sum(np.array([2 ** ii for ii in range(25)]))
@@ -1373,8 +1392,8 @@ def main(flg):
 
     # Coeff as corner plot
     if flg & (2**14):
-        fig_a_corner()
-        #fig_a_corner(nmf_fit='Tara')
+        #fig_a_corner()
+        fig_a_corner(dataset='Tara')
 
     # NMF RMSE
     if flg & (2**10):
@@ -1421,6 +1440,10 @@ def main(flg):
         #fig_fit_W4(nmf_fit='L23', chl_min=440.)
         fig_fit_W4(nmf_fit='Tara', chl_min=440.)
 
+    # Tara Chl vs W2
+    if flg & (2**22):
+        fig_tara_chl_vs_W2()
+
 # Command line execution
 if __name__ == '__main__':
     import sys
@@ -1445,15 +1468,16 @@ if __name__ == '__main__':
         
         #flg += 2 ** 12  # L23 Indiv
         #flg += 2 ** 13  # Tara Indiv
-        #flg += 2 ** 14  # L23 H coefficients in a Corner plot
+        #flg += 2 ** 14  # L23/Tara H coefficients in a Corner plot
 
         #flg += 2 ** 15  # L23 a_g + a_d
         #flg += 2 ** 16  # Variance per mode (PCA)
         #flg += 2 ** 17  # L23 H coefficients + ad/ag in a Corner plot
         #flg += 2 ** 18  # Explore Tara geographic distribution
         #flg += 2 ** 19  # L23 aph vs H2+H4
-        flg += 2 ** 20  # Fit W2 
-        flg += 2 ** 21  # Fit W4 
+        #flg += 2 ** 20  # Fit W2 
+        #flg += 2 ** 21  # Fit W4 
+        flg += 2 ** 22  # Tara chl vs. W2
     else:
         flg = sys.argv[1]
 
