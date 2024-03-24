@@ -1360,6 +1360,85 @@ def fig_tara_chl_W(N_NMF:int=4):
     plt.savefig(outfile, dpi=300)
     print(f"Saved: {outfile}")
 
+def fig_tara_outliers():
+
+    outfile = 'fig_tara_outliers.png'
+
+    # Load
+    nmf_fit = 'Tara'
+    N_NMF, iop = 4, 'a'
+    d = cnmf_io.load_nmf(nmf_fit, N_NMF, iop)
+    M = d['M']
+    coeff = d['coeff']
+    NMF_wave = d['wave']
+    tara_db = tara_io.load_pg_db(expedition='Microbiome')
+
+    NMF_chl = coeff[:,1] 
+
+    # Chl
+    midx = cat_utils.match_ids(d['UID'], tara_db.uid.values)
+    Tara_chlA = tara_db.Chl_lineheight.values[midx]
+
+    # High outliers
+    high_out = (NMF_chl > 2.) & (Tara_chlA < 0.5)
+    all_high = np.where(high_out)[0]
+    high_idx = all_high[0]
+
+    # Low outliers
+    low_out = (NMF_chl < 0.1) & (Tara_chlA > 0.5)
+    all_low = np.where(low_out)[0]
+    low_idx = all_low[0]
+
+    fig = plt.figure(figsize=(12,7))
+    gs = gridspec.GridSpec(1,2)
+
+    # High
+    ax_high = plt.subplot(gs[0])
+    ax_high.plot(d['wave'], d['spec'][high_idx])
+    model = np.zeros_like(d['wave'])
+    # Break it down
+    for ss in range(d['M'].shape[0]):
+        ax_high.plot(d['wave'], d['M'][ss]*d['coeff'][high_idx][ss], 
+            label=r'$H_'+f'{ss+1}: {d["coeff"][high_idx][ss]:0.2f}'+'$', ls=':')
+        #
+        model += d['M'][ss]*d['coeff'][high_idx][ss]
+    ax_high.plot(d['wave'], model, 'k:', label='Total')
+    ax_high.legend(fontsize=14)
+    #
+    ax_high.set_xlabel('Wavelength (nm)')
+    ax_high.set_ylabel(r'$a_{\rm p}(\lambda) \; [\rm m^{-1}]$')
+    #
+    ax_high.text(0.15, 0.90, r'(a) High $H_2$', color='k',
+        transform=ax_high.transAxes,
+        fontsize=22, ha='left')
+
+    # Low
+    ax_low = plt.subplot(gs[1])
+    ax_low.plot(d['wave'], d['spec'][low_idx])
+    model = np.zeros_like(d['wave'])
+    # Break it down
+    for ss in range(d['M'].shape[0]):
+        ax_low.plot(d['wave'], d['M'][ss]*d['coeff'][low_idx][ss], 
+            label=r'$H_'+f'{ss+1}: {d["coeff"][low_idx][ss]:0.2f}'+'$', ls=':')
+        #
+        model += d['M'][ss]*d['coeff'][low_idx][ss]
+    ax_low.plot(d['wave'], model, 'k:', label='Total')
+    ax_low.legend(fontsize=14)
+    #
+    ax_low.set_xlabel('Wavelength (nm)')
+    ax_low.set_ylabel(r'$a_{\rm p}(\lambda) \; [\rm m^{-1}]$')
+    #
+    ax_low.text(0.15, 0.90, r'(a) Low $H_2$', color='k',
+        transform=ax_low.transAxes,
+        fontsize=22, ha='left')
+
+    for ax in [ax_high, ax_low]:
+        plotting.set_fontsize(ax, 16)
+
+    plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
+    plt.savefig(outfile, dpi=300)
+    print(f"Saved: {outfile}")
+
 def main(flg):
     if flg== 'all':
         flg= np.sum(np.array([2 ** ii for ii in range(25)]))
@@ -1475,6 +1554,11 @@ def main(flg):
     if flg & (2**22):
         fig_tara_chl_W()
 
+    # Tara Chl outliers
+    if flg & (2**23):
+        fig_tara_outliers()
+
+
 # Command line execution
 if __name__ == '__main__':
     import sys
@@ -1509,7 +1593,8 @@ if __name__ == '__main__':
         #flg += 2 ** 20  # Fit W2 
         #flg += 2 ** 21  # Fit W4 
 
-        flg += 2 ** 22  # Tara Chl-a
+        #flg += 2 ** 22  # Tara Chl-a
+        flg += 2 ** 23  # Tara Chl-a outliers
     else:
         flg = sys.argv[1]
 
