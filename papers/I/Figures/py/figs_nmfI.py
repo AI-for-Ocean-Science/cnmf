@@ -1328,7 +1328,7 @@ def fig_tara_chl_W(N_NMF:int=4):
     midx = cat_utils.match_ids(d_tara['UID'], tara_db.uid.values)
     Tara_chlA = tara_db.Chl_lineheight.values[midx]
 
-    figsize=(6,6)
+    figsize=(8,6)
     fig = plt.figure(figsize=figsize)
     plt.clf()
     gs = gridspec.GridSpec(1,1)
@@ -1337,13 +1337,20 @@ def fig_tara_chl_W(N_NMF:int=4):
 
     keep = (Tara_chlA > 0.01) & (NMF_chl > 0.01)
 
-    _ = sns.histplot(x=NMF_chl[keep], 
-                     y=Tara_chlA[keep], ax=ax,
-                     bins=50,
-                     log_scale=True)
+    hb = ax.hexbin(NMF_chl[keep], Tara_chlA[keep], 
+                   gridsize=50, bins='log', 
+                   xscale='log', yscale='log',
+                    cmap='Greens')
+    #ax.set(xlim=xlim, ylim=ylim)
+    cb = fig.colorbar(hb, ax=ax, label='counts')
+    ax.set_xlabel(r'$H_{2}^{\rm Tara}$')
+    ax.set_ylabel('Tara Chl Lineheight')
+    plotting.set_fontsize(ax, 14)
 
-    jg = sns.jointplot(x=tara_chl[keep], 
-                     y=chlA[keep], 
+
+    '''
+    jg = sns.jointplot(y=Tara_chlA[keep], 
+                     x=NMF_chl[keep], 
                 kind='hex', bins='log', # gridsize=250, #xscale='log',
                 xscale='log', yscale='log',
                 # mincnt=1,
@@ -1351,10 +1358,12 @@ def fig_tara_chl_W(N_NMF:int=4):
                 marginal_kws=dict(fill=False, color='black', 
                                     bins=100)) 
 
+    plt.colorbar()
     # Labels
-    jg.ax_joint.set_xlabel('NMF Chl')
-    jg.ax_joint.set_ylabel('Tara Chl')
+    jg.ax_joint.set_xlabel(r'$H_{2}^{\rm Tara}$')
+    jg.ax_joint.set_ylabel('Tara Chl Lineheight')
     plotting.set_fontsize(jg.ax_joint, 14)
+    '''
 
     plt.tight_layout()#pad=0.0, h_pad=0.0, w_pad=0.3)
     plt.savefig(outfile, dpi=300)
@@ -1497,7 +1506,7 @@ if __name__ == '__main__':
         #flg += 2 ** 4  # 16 -- Fit CDOM
         #flg += 2 ** 5  # 32 -- 
         
-        #flg += 2 ** 12  # L23 Indiv
+        flg += 2 ** 12  # L23 Indiv
         #flg += 2 ** 13  # Tara Indiv
         #flg += 2 ** 14  # L23 H coefficients in a Corner plot
 
@@ -1509,7 +1518,7 @@ if __name__ == '__main__':
         #flg += 2 ** 20  # Fit W2 
         #flg += 2 ** 21  # Fit W4 
 
-        flg += 2 ** 22  # Tara Chl-a
+        #flg += 2 ** 22  # Tara Chl-a
     else:
         flg = sys.argv[1]
 
